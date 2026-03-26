@@ -1,0 +1,61 @@
+name: Remotion AEM CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: remotion-aem-showcase/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+      working-directory: remotion-aem-showcase
+
+    - name: Type check
+      run: npm run type-check
+      working-directory: remotion-aem-showcase
+
+    - name: Lint
+      run: npm run lint
+      working-directory: remotion-aem-showcase
+
+    - name: Run unit tests
+      run: npm run test
+      working-directory: remotion-aem-showcase
+
+    - name: Build WASM
+      run: npm run build:wasm
+      working-directory: remotion-aem-showcase
+
+    - name: Smoke test (Stills)
+      run: npm run test:smoke
+      working-directory: remotion-aem-showcase
+
+    - name: Upload smoke test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: smoke-test-stills
+        path: remotion-aem-showcase/out/*.png
+
+  # Placeholder for future deployment job
+  # deploy:
+  #   needs: validate
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Render and Upload to AEM
+  #       run: echo "Deploying to AEM..."

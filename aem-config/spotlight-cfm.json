@@ -1,0 +1,95 @@
+{
+  "jcr:primaryType": "nt:unstructured",
+  "jcr:title": "Spotlight Video Scene",
+  "data": {
+    "jcr:primaryType": "nt:unstructured",
+    "model": {
+      "jcr:primaryType": "nt:unstructured",
+      "fields": {
+        "title": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Hero Title",
+          "valueType": "string",
+          "required": "true"
+        },
+        "subtitle": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Subtitle",
+          "valueType": "string"
+        },
+        "cta": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Call to Action Text",
+          "valueType": "string",
+          "default": "Learn More"
+        },
+        "brandColor": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Brand Background Color",
+          "valueType": "string",
+          "default": "#0E3B5A",
+          "validation": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "image": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Hero Image",
+          "valueType": "content-reference",
+          "required": "true",
+          "rootPath": "/content/dam"
+        },
+        "durationSeconds": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Duration (Seconds)",
+          "valueType": "long",
+          "default": 4
+        },
+        "animationStyle": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Animation Style",
+          "valueType": "string",
+          "options": [
+            { "text": "Cinematic", "value": "cinematic" },
+            { "text": "Energetic", "value": "energetic" },
+            { "text": "Minimal", "value": "minimal" }
+          ]
+        },
+        "renditionType": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Image Rendition Type",
+          "valueType": "string",
+          "options": [
+            { "text": "Web Optimized", "value": "web" },
+            { "text": "High Performance", "value": "optimized" },
+            { "text": "Original", "value": "original" }
+          ]
+        },
+        "effectType": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Visual Effect",
+          "valueType": "string",
+          "options": [
+            { "text": "None", "value": "none" },
+            { "text": "Glow (WASM)", "value": "glow" },
+            { "text": "Glitch (WASM)", "value": "glitch" }
+          ]
+        },
+        "effectIntensity": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Effect Intensity (0.0 - 1.0)",
+          "valueType": "double",
+          "default": 0.5
+        },
+        "lottieUrl": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "Lottie Background URL/Path",
+          "valueType": "string"
+        },
+        "svgOverlayUrl": {
+          "jcr:primaryType": "nt:unstructured",
+          "fieldLabel": "SVG Overlay URL/Path",
+          "valueType": "string"
+        }
+      }
+    }
+  }
+}

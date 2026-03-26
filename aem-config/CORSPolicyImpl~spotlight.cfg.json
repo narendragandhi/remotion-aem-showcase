@@ -1,0 +1,30 @@
+{
+  "alloworigin": [
+    "http://localhost:3000",
+    "https://your-render-engine.com"
+  ],
+  "allowedpaths": [
+    "/content/dam/.*",
+    "/content/graphql/global/endpoint"
+  ],
+  "exposedheaders": [
+    "ETag",
+    "Content-Disposition"
+  ],
+  "supportedmethods": [
+    "GET",
+    "HEAD",
+    "OPTIONS"
+  ],
+  "supportedheaders": [
+    "Authorization",
+    "Origin",
+    "Accept",
+    "X-Requested-With",
+    "Content-Type",
+    "Access-Control-Request-Method",
+    "Access-Control-Request-Headers"
+  ],
+  "supportscredentials": true,
+  "maxage": 3600
+}
