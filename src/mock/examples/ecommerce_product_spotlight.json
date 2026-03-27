@@ -1,0 +1,33 @@
+{
+  "id": "/content/dam/retail/products/desk-lamp",
+  "scenes": [
+    {
+      "title": "Modern Desk Lamp",
+      "subtitle": "NEW ARRIVAL",
+      "cta": "Shop Now",
+      "brandColor": "#333333",
+      "imageUrl": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 3,
+      "animationStyle": "minimal",
+      "renditionType": "web",
+      "effectType": "none",
+      "effectIntensity": 0,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Warm Glow",
+      "subtitle": "SOFT LIGHTING",
+      "cta": "Add to Cart",
+      "brandColor": "#D4AF37",
+      "imageUrl": "https://images.unsplash.com/photo-1534073828943-f801091bb18c?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "cinematic",
+      "renditionType": "optimized",
+      "effectType": "glow",
+      "effectIntensity": 0.7,
+      "lottieUrl": "spotlight_bg.json",
+      "svgOverlayUrl": ""
+    }
+  ]
+}

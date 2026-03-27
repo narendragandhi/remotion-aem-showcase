@@ -1,0 +1,33 @@
+{
+  "id": "/content/dam/news/localized/london-update",
+  "scenes": [
+    {
+      "title": "Breaking News",
+      "subtitle": "LONDON UPDATE",
+      "cta": "Read More",
+      "brandColor": "#8B0000",
+      "imageUrl": "https://images.unsplash.com/photo-1526124965006-c7bb6791177a?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 3,
+      "animationStyle": "energetic",
+      "renditionType": "optimized",
+      "effectType": "glitch",
+      "effectIntensity": 0.3,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Market High",
+      "subtitle": "FINANCIAL TIMES",
+      "cta": "Analysis",
+      "brandColor": "#1A1A1A",
+      "imageUrl": "https://images.unsplash.com/photo-1611974714658-75d4f1ad042e?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 5,
+      "animationStyle": "energetic",
+      "renditionType": "optimized",
+      "effectType": "glitch",
+      "effectIntensity": 0.8,
+      "lottieUrl": "",
+      "svgOverlayUrl": "aem-icon.svg"
+    }
+  ]
+}

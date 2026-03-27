@@ -1,0 +1,33 @@
+{
+  "id": "/content/dam/global/campaigns/fr-fr/launch",
+  "scenes": [
+    {
+      "title": "Bonjour Paris",
+      "subtitle": "LANCEMENT MONDIAL",
+      "cta": "Commander",
+      "brandColor": "#002395",
+      "imageUrl": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "cinematic",
+      "renditionType": "optimized",
+      "effectType": "none",
+      "effectIntensity": 0,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Qualité Premium",
+      "subtitle": "ARTISANAT",
+      "cta": "Découvrir",
+      "brandColor": "#ED2939",
+      "imageUrl": "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "minimal",
+      "renditionType": "web",
+      "effectType": "glow",
+      "effectIntensity": 0.4,
+      "lottieUrl": "spotlight_bg.json",
+      "svgOverlayUrl": "aem-icon.svg"
+    }
+  ]
+}
