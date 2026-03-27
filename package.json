@@ -26,6 +26,8 @@
     "@remotion/cli": "^4.0.0",
     "@remotion/google-fonts": "^4.0.0",
     "@remotion/lottie": "^4.0.435",
+    "@types/jsonwebtoken": "^9.0.10",
+    "jsonwebtoken": "^9.0.3",
     "lottie-react": "^2.4.1",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",

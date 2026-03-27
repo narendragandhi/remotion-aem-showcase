@@ -26,6 +26,7 @@ export interface AemConfig {
   persistedQueryPath?: string;
   useMock?: boolean;
   publishTier?: boolean;
+  strictMode?: boolean;
 }
 
 /**
@@ -39,6 +40,7 @@ export const getAemConfig = (): AemConfig => ({
   persistedQueryPath: process.env.AEM_PERSISTED_QUERY,
   useMock: process.env.USE_MOCK_AEM === "true",
   publishTier: process.env.AEM_PUBLISH_TIER === "true",
+  strictMode: process.env.AEM_STRICT_MODE === "true",
 });
 
 /**
@@ -265,19 +267,19 @@ export const fetchAemSpotlight = async (
 ): Promise<AemSpotlight> => {
   const resolvedConfig = { ...getAemConfig(), ...config };
 
-  // Use mock data if configured or no base URL
-  if (resolvedConfig.useMock || !resolvedConfig.baseUrl) {
+  const { baseUrl, token, graphqlEndpoint, contentFragmentPath, persistedQueryPath, strictMode, useMock } = resolvedConfig;
+
+  // Use mock data if configured or no base URL (and not in strict mode)
+  if ((useMock || !baseUrl) && !strictMode) {
     console.info("[AEM] Using mock data");
-    // Mock data is already in final format, validate and return directly
     const result = AemSpotlightSchema.safeParse(mockData);
-    if (result.success) {
-      return result.data;
-    }
-    // Fallback to treating as GraphQL item
+    if (result.success) return result.data;
     return mapAemItemToSpotlight(mockData as unknown as AemGraphQLItem);
   }
 
-  const { baseUrl, token, graphqlEndpoint, contentFragmentPath, persistedQueryPath } = resolvedConfig;
+  if (!baseUrl && strictMode) {
+    throw new AemFetchError("AEM_BASE_URL is missing in strict mode", 400);
+  }
 
   // Determine endpoint URL
   let endpoint: string;
@@ -285,11 +287,11 @@ export const fetchAemSpotlight = async (
   let method: "GET" | "POST" = "POST";
 
   if (persistedQueryPath) {
-    // Use persisted query (GET request, CDN cacheable)
+    // Principal Recommendation: Use persisted queries for CDN cache hits
     endpoint = `${baseUrl}${PERSISTED_QUERY_PATH}${persistedQueryPath}`;
     method = "GET";
   } else {
-    // Use inline GraphQL query (POST request)
+    // Inline queries (Dev only)
     endpoint = `${baseUrl}${graphqlEndpoint}`;
     body = JSON.stringify({
       query: GRAPHQL_QUERY,
@@ -316,9 +318,8 @@ export const fetchAemSpotlight = async (
     }
 
     const json = await res.json();
-
-    // Validate response structure
     const parseResult = AemGraphQLResponseSchema.safeParse(json);
+    
     if (!parseResult.success) {
       throw new AemValidationError(
         "Invalid AEM GraphQL response structure",
@@ -328,7 +329,6 @@ export const fetchAemSpotlight = async (
 
     const response = parseResult.data;
 
-    // Check for GraphQL errors
     if (response.errors && response.errors.length > 0) {
       throw new AemFetchError(
         `AEM GraphQL errors: ${response.errors.map((e) => e.message).join("; ")}`,
@@ -337,53 +337,25 @@ export const fetchAemSpotlight = async (
       );
     }
 
-    // Extract item from response (try multiple query result shapes)
     const item =
       response.data?.contentFragmentByPath?.item ??
       response.data?.contentFragmentList?.items?.[0] ??
       response.data?.spotlightList?.items?.[0];
 
     if (!item) {
-      throw new AemValidationError(
-        "No content fragment found in AEM response",
-        ["Missing item in response"]
-      );
+      throw new AemValidationError("No content fragment found in AEM response", ["Missing item"]);
     }
 
     return mapAemItemToSpotlight(item, resolvedConfig);
   } catch (error) {
-    // Re-throw our typed errors
-    if (error instanceof AemFetchError || error instanceof AemValidationError) {
-      console.error(`[AEM] ${error.name}:`, error.message);
-
-      // For recoverable errors, fall back to mock data
-      if (error.recoverable) {
-        console.warn("[AEM] Falling back to mock data");
-        // Mock data is already in final format
-        const fallbackResult = AemSpotlightSchema.safeParse(mockData);
-        if (fallbackResult.success) {
-          return fallbackResult.data;
-        }
-        return mapAemItemToSpotlight(mockData as unknown as AemGraphQLItem);
-      }
-
+    if (strictMode) {
+      console.error("[AEM-STRICT] Failing render due to AEM error:", error instanceof Error ? error.message : String(error));
       throw error;
     }
 
-    // Wrap unknown errors
-    const fetchError = new AemFetchError(
-      error instanceof Error ? error.message : String(error),
-      undefined,
-      endpoint
-    );
-
-    console.error("[AEM] Unexpected error:", fetchError.message);
-    console.warn("[AEM] Falling back to mock data");
-    // Mock data is already in final format
-    const result = AemSpotlightSchema.safeParse(mockData);
-    if (result.success) {
-      return result.data;
-    }
+    console.warn("[AEM] Error encountered, falling back to mock data (Non-Strict Mode)");
+    const fallbackResult = AemSpotlightSchema.safeParse(mockData);
+    if (fallbackResult.success) return fallbackResult.data;
     return mapAemItemToSpotlight(mockData as unknown as AemGraphQLItem);
   }
 };
