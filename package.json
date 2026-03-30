@@ -24,7 +24,8 @@
     "validate": "npm run type-check && npm run lint && npm run test",
     "prepare": "husky || true",
     "test:smoke": "npx remotion still src/index.tsx AEMSpotlight-16x9 out/smoke_16x9.png && npx remotion still src/index.tsx AEMSpotlight-9x16 out/smoke_9x16.png && npx remotion still src/index.tsx AEMSpotlight-1x1 out/smoke_1x1.png",
-    "deploy:aem": "npm run render -- AEMSpotlight-16x9 out/spotlight_prod.mp4 && node scripts/upload-to-aem.js out/spotlight_prod.mp4 $REMOTION_RENDER_DEST"
+    "deploy:aem": "npm run render -- AEMSpotlight-16x9 out/spotlight_prod.mp4 && node scripts/upload-to-aem.js out/spotlight_prod.mp4 $REMOTION_RENDER_DEST",
+    "benchmark": "node scripts/benchmark-effects.js"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

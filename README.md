@@ -243,6 +243,16 @@ This project follows:
 
 See `/docs` for detailed methodology documentation.
 
+## Additional Documentation
+
+| Document | Description |
+|----------|-------------|
+| [AEM Integration Guide](docs/aem-integration-guide.md) | Live AEM endpoints, sandbox setup, authentication |
+| [Performance Profiling](docs/performance-profiling.md) | WASM vs JS benchmarks, optimization strategies |
+| [Monitoring & Observability](docs/monitoring-observability.md) | Telemetry, error tracking, alerting |
+| [TUTORIAL.md](TUTORIAL.md) | 10-minute quick start guide |
+| [EXAMPLES.md](EXAMPLES.md) | Enterprise use case examples |
+
 ## License
 
 Proprietary - Adobe Internal Use
