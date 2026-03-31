@@ -11,6 +11,9 @@ import {
   SpotlightSceneSchema,
   AemSpotlightSchema,
 } from "./schema";
+import { trackAemFetch, trackError, createTimer } from "../telemetry";
+import { getAccessToken } from "./tokenManager";
+import { getCachedAemResponse, cacheAemResponse } from "../cache";
 
 // Re-export types for backward compatibility
 export type { AemSpotlight, SpotlightScene, AnimationStyle, RenditionType, EffectType };
@@ -269,16 +272,43 @@ export const fetchAemSpotlight = async (
 
   const { baseUrl, token, graphqlEndpoint, contentFragmentPath, persistedQueryPath, strictMode, useMock } = resolvedConfig;
 
+  // Check cache first (unless using mock)
+  const cacheKey = contentFragmentPath || "/content/dam/content-fragments/spotlight";
+  if (!useMock && baseUrl) {
+    const cached = getCachedAemResponse<AemSpotlight>(cacheKey);
+    if (cached) {
+      console.info("[AEM] Using cached response");
+      return cached;
+    }
+  }
+
+  // Initialize telemetry tracker
+  const telemetryTracker = trackAemFetch(
+    baseUrl ? `${baseUrl}${graphqlEndpoint}` : "mock",
+    contentFragmentPath ?? "/content/dam/content-fragments/spotlight",
+    useMock || !baseUrl
+  );
+  const fetchTimer = createTimer("aem_fetch_duration", { endpoint: baseUrl || "mock" });
+
   // Use mock data if configured or no base URL (and not in strict mode)
   if ((useMock || !baseUrl) && !strictMode) {
     console.info("[AEM] Using mock data");
     const result = AemSpotlightSchema.safeParse(mockData);
-    if (result.success) return result.data;
-    return mapAemItemToSpotlight(mockData as unknown as AemGraphQLItem);
+    fetchTimer.stop();
+    if (result.success) {
+      telemetryTracker.complete(result.data.scenes.length);
+      return result.data;
+    }
+    const mapped = mapAemItemToSpotlight(mockData as unknown as AemGraphQLItem);
+    telemetryTracker.complete(mapped.scenes.length);
+    return mapped;
   }
 
   if (!baseUrl && strictMode) {
-    throw new AemFetchError("AEM_BASE_URL is missing in strict mode", 400);
+    const error = new AemFetchError("AEM_BASE_URL is missing in strict mode", 400);
+    telemetryTracker.error(error.message);
+    trackError("aem_config_error", error, { strictMode: true }, false);
+    throw error;
   }
 
   // Determine endpoint URL
@@ -300,41 +330,53 @@ export const fetchAemSpotlight = async (
   }
 
   try {
+    // Get token (supports both static and IMS auto-refresh)
+    const accessToken = token || (await getAccessToken());
+
     const res = await fetch(endpoint, {
       method,
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
       ...(body ? { body } : {}),
     });
 
     if (!res.ok) {
-      throw new AemFetchError(
+      const error = new AemFetchError(
         `AEM GraphQL request failed: ${res.status} ${res.statusText}`,
         res.status,
         endpoint
       );
+      telemetryTracker.error(error.message);
+      trackError("aem_fetch_error", error, { status: res.status, endpoint });
+      throw error;
     }
 
     const json = await res.json();
     const parseResult = AemGraphQLResponseSchema.safeParse(json);
-    
+
     if (!parseResult.success) {
-      throw new AemValidationError(
+      const error = new AemValidationError(
         "Invalid AEM GraphQL response structure",
         parseResult.error.issues.map((e) => e.message)
       );
+      telemetryTracker.error(error.message);
+      trackError("aem_validation_error", error, { issues: parseResult.error.issues });
+      throw error;
     }
 
     const response = parseResult.data;
 
     if (response.errors && response.errors.length > 0) {
-      throw new AemFetchError(
+      const error = new AemFetchError(
         `AEM GraphQL errors: ${response.errors.map((e) => e.message).join("; ")}`,
         undefined,
         endpoint
       );
+      telemetryTracker.error(error.message);
+      trackError("aem_graphql_error", error, { graphqlErrors: response.errors });
+      throw error;
     }
 
     const item =
@@ -343,20 +385,45 @@ export const fetchAemSpotlight = async (
       response.data?.spotlightList?.items?.[0];
 
     if (!item) {
-      throw new AemValidationError("No content fragment found in AEM response", ["Missing item"]);
+      const error = new AemValidationError("No content fragment found in AEM response", ["Missing item"]);
+      telemetryTracker.error(error.message);
+      trackError("aem_content_error", error, { endpoint });
+      throw error;
     }
 
-    return mapAemItemToSpotlight(item, resolvedConfig);
+    const spotlight = mapAemItemToSpotlight(item, resolvedConfig);
+    fetchTimer.stop();
+    telemetryTracker.complete(spotlight.scenes.length);
+
+    // Cache successful response
+    cacheAemResponse(cacheKey, spotlight);
+
+    return spotlight;
   } catch (error) {
+    fetchTimer.stop();
+
     if (strictMode) {
       console.error("[AEM-STRICT] Failing render due to AEM error:", error instanceof Error ? error.message : String(error));
       throw error;
     }
 
     console.warn("[AEM] Error encountered, falling back to mock data (Non-Strict Mode)");
+    trackError(
+      "aem_fallback",
+      error instanceof Error ? error : new Error(String(error)),
+      { fallbackToMock: true },
+      true,
+      true
+    );
+
     const fallbackResult = AemSpotlightSchema.safeParse(mockData);
-    if (fallbackResult.success) return fallbackResult.data;
-    return mapAemItemToSpotlight(mockData as unknown as AemGraphQLItem);
+    if (fallbackResult.success) {
+      telemetryTracker.complete(fallbackResult.data.scenes.length);
+      return fallbackResult.data;
+    }
+    const mapped = mapAemItemToSpotlight(mockData as unknown as AemGraphQLItem);
+    telemetryTracker.complete(mapped.scenes.length);
+    return mapped;
   }
 };
 

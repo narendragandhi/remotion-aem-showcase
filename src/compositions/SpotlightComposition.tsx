@@ -8,7 +8,7 @@ import {
   Series,
   staticFile,
 } from "remotion";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Lottie, LottieAnimationData } from "@remotion/lottie";
 import {
   AemSpotlight,
@@ -20,12 +20,21 @@ import {
   calculatePulse,
   calculateGlitch,
   warmupSpotlightWasm,
+  isWasmAvailable,
 } from "../wasm/spotlightEffects";
 import {
   SpotlightErrorBoundary,
   AssetErrorPlaceholder,
 } from "../components/ErrorBoundary";
 import { AssetLoadError } from "../errors";
+import {
+  trackRenderStart,
+  trackRenderComplete,
+  trackRenderError,
+  trackError,
+  trackPerformance,
+  RenderMetrics,
+} from "../telemetry";
 
 export type SpotlightProps = {
   spotlight: AemSpotlight;
@@ -323,13 +332,58 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
 /**
  * Main Spotlight Composition component.
  * Renders a sequence of scenes from AEM Content Fragments.
+ * Includes telemetry tracking for render metrics.
  */
 export const SpotlightComposition: React.FC<SpotlightProps> = ({
   spotlight,
 }) => {
-  const { fps } = useVideoConfig();
+  const { fps, width, height, durationInFrames } = useVideoConfig();
+  const frame = useCurrentFrame();
+  const metricsRef = useRef<RenderMetrics | null>(null);
+  const renderStartedRef = useRef(false);
+
+  // Track render start (only once)
+  useEffect(() => {
+    if (renderStartedRef.current) return;
+    renderStartedRef.current = true;
+
+    const effectsUsed = spotlight?.scenes
+      ?.map((s) => s.effectType)
+      .filter((e) => e !== "none") ?? [];
+
+    metricsRef.current = trackRenderStart({
+      compositionId: `AEMSpotlight-${width}x${height}`,
+      width,
+      height,
+      durationFrames: durationInFrames,
+      fps,
+      sceneCount: spotlight?.scenes?.length ?? 0,
+      effectsUsed: [...new Set(effectsUsed)],
+      wasmEnabled: isWasmAvailable(),
+    });
+
+    trackPerformance("render_init", performance.now(), "ms", {
+      compositionId: `AEMSpotlight-${width}x${height}`,
+      sceneCount: spotlight?.scenes?.length ?? 0,
+    });
+  }, [spotlight, width, height, durationInFrames, fps]);
+
+  // Track render completion (when we reach the last frame)
+  useEffect(() => {
+    if (frame === durationInFrames - 1 && metricsRef.current) {
+      trackRenderComplete(metricsRef.current);
+    }
+  }, [frame, durationInFrames]);
 
   if (!spotlight || !spotlight.scenes || spotlight.scenes.length === 0) {
+    // Track error for empty content
+    if (metricsRef.current) {
+      trackRenderError(metricsRef.current, new Error("No content available"));
+    }
+    trackError("content_error", new Error("No spotlight scenes provided"), {
+      spotlightId: spotlight?.id,
+    });
+
     return (
       <AbsoluteFill
         style={{

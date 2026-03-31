@@ -2,60 +2,236 @@ name: Remotion AEM CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_to_aem:
+        description: 'Deploy rendered videos to AEM'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '20.x'
+  WORKING_DIR: remotion-aem-showcase
 
 jobs:
   validate:
+    name: Validate & Test
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18.x'
-        cache: 'npm'
-        cache-dependency-path: remotion-aem-showcase/package-lock.json
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
 
-    - name: Install dependencies
-      run: npm ci
-      working-directory: remotion-aem-showcase
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.WORKING_DIR }}
 
-    - name: Type check
-      run: npm run type-check
-      working-directory: remotion-aem-showcase
+      - name: Type check
+        run: npm run type-check
+        working-directory: ${{ env.WORKING_DIR }}
 
-    - name: Lint
-      run: npm run lint
-      working-directory: remotion-aem-showcase
+      - name: Lint
+        run: npm run lint
+        working-directory: ${{ env.WORKING_DIR }}
 
-    - name: Run unit tests
-      run: npm run test
-      working-directory: remotion-aem-showcase
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+        working-directory: ${{ env.WORKING_DIR }}
 
-    - name: Build WASM
-      run: npm run build:wasm
-      working-directory: remotion-aem-showcase
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ${{ env.WORKING_DIR }}/coverage/
+          retention-days: 7
 
-    - name: Smoke test (Stills)
-      run: npm run test:smoke
-      working-directory: remotion-aem-showcase
+      - name: Build WASM
+        run: npm run build:wasm
+        working-directory: ${{ env.WORKING_DIR }}
 
-    - name: Upload smoke test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: smoke-test-stills
-        path: remotion-aem-showcase/out/*.png
+  smoke-test:
+    name: Smoke Test (Stills)
+    runs-on: ubuntu-latest
+    needs: validate
 
-  # Placeholder for future deployment job
-  # deploy:
-  #   needs: validate
-  #   if: github.ref == 'refs/heads/main'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Render and Upload to AEM
-  #       run: echo "Deploying to AEM..."
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Build WASM
+        run: npm run build:wasm
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Generate smoke test stills
+        run: npm run test:smoke
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          USE_MOCK_AEM: 'true'
+
+      - name: Upload smoke test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-stills
+          path: ${{ env.WORKING_DIR }}/out/*.png
+          retention-days: 14
+
+  e2e-render:
+    name: E2E Render Test
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Install Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+
+      - name: Build WASM
+        run: npm run build:wasm
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Run E2E rendering tests
+        run: npm run test:e2e
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          USE_MOCK_AEM: 'true'
+          TELEMETRY_ENABLED: 'true'
+          TELEMETRY_BACKEND: 'console'
+
+      - name: Upload E2E test videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-render-outputs
+          path: ${{ env.WORKING_DIR }}/out/e2e/
+          retention-days: 7
+
+  benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Build WASM
+        run: npm run build:wasm
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Run benchmark
+        run: npm run benchmark > benchmark-results.txt 2>&1
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: ${{ env.WORKING_DIR }}/benchmark-results.txt
+          retention-days: 30
+
+  deploy:
+    name: Deploy to AEM
+    runs-on: ubuntu-latest
+    needs: [smoke-test, e2e-render]
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_to_aem == 'true')
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Build WASM
+        run: npm run build:wasm
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Render all formats
+        run: npm run render:all
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          USE_MOCK_AEM: 'false'
+          AEM_BASE_URL: ${{ secrets.AEM_BASE_URL }}
+          AEM_TOKEN: ${{ secrets.AEM_TOKEN }}
+          AEM_GRAPHQL_ENDPOINT: ${{ secrets.AEM_GRAPHQL_ENDPOINT }}
+          AEM_CONTENT_FRAGMENT_PATH: ${{ secrets.AEM_CONTENT_FRAGMENT_PATH }}
+
+      - name: Upload rendered videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-videos
+          path: ${{ env.WORKING_DIR }}/out/*.mp4
+          retention-days: 30
+
+      - name: Deploy to AEM DAM
+        if: env.AEM_BASE_URL != ''
+        run: |
+          for video in out/*.mp4; do
+            node scripts/upload-to-aem.js "$video" "/content/dam/remotion-showcase/$(basename $video)"
+          done
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          AEM_BASE_URL: ${{ secrets.AEM_BASE_URL }}
+          AEM_TOKEN: ${{ secrets.AEM_TOKEN }}
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          echo "Deployment completed with status: ${{ job.status }}"
+          echo "Videos rendered: $(ls -la out/*.mp4 2>/dev/null | wc -l)"
+        working-directory: ${{ env.WORKING_DIR }}

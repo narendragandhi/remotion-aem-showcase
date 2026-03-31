@@ -8,6 +8,7 @@ import {
   fetchAemSpotlight,
 } from "./aemClient";
 import { AemGraphQLItem } from "./schema";
+import { clearCache } from "../cache";
 
 describe("mapAemItemToSpotlight", () => {
   it("maps a single scene correctly with all fields", () => {
@@ -242,6 +243,7 @@ describe("fetchAemSpotlight", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    clearCache(); // Clear cache between tests
     process.env.USE_MOCK_AEM = "true";
   });
 

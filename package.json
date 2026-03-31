@@ -11,9 +11,10 @@
     "start:global": "REMOTION_MOCK_FILE=global remotion preview src/index.tsx",
     "render": "remotion render src/index.tsx",
     "render:all": "npm run render -- AEMSpotlight-16x9 out/spotlight_16x9.mp4 && npm run render -- AEMSpotlight-9x16 out/spotlight_9x16.mp4 && npm run render -- AEMSpotlight-1x1 out/spotlight_1x1.mp4",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "vitest run --exclude src/test/e2e.test.ts",
+    "test:watch": "vitest --exclude src/test/e2e.test.ts",
+    "test:coverage": "vitest run --coverage --exclude src/test/e2e.test.ts",
+    "test:e2e": "vitest run src/test/e2e.test.ts --testTimeout=300000",
     "build:wasm": "node scripts/build-spotlight-wasm.js",
     "upgrade": "remotion upgrade",
     "lint": "eslint src --ext .ts,.tsx",
@@ -25,7 +26,11 @@
     "prepare": "husky || true",
     "test:smoke": "npx remotion still src/index.tsx AEMSpotlight-16x9 out/smoke_16x9.png && npx remotion still src/index.tsx AEMSpotlight-9x16 out/smoke_9x16.png && npx remotion still src/index.tsx AEMSpotlight-1x1 out/smoke_1x1.png",
     "deploy:aem": "npm run render -- AEMSpotlight-16x9 out/spotlight_prod.mp4 && node scripts/upload-to-aem.js out/spotlight_prod.mp4 $REMOTION_RENDER_DEST",
-    "benchmark": "node scripts/benchmark-effects.js"
+    "benchmark": "node scripts/benchmark-effects.js",
+    "health": "npx tsx scripts/health-check.js",
+    "health:json": "npx tsx scripts/health-check.js --json",
+    "health:live": "npx tsx scripts/health-check.js --live",
+    "health:ready": "npx tsx scripts/health-check.js --ready"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
