@@ -12,12 +12,23 @@ import {
   AemSpotlightSchema,
 } from "./schema";
 import { trackAemFetch, trackError, createTimer } from "../telemetry";
-import { getCachedAemResponse, cacheAemResponse } from "../cache";
 
-// Dynamic import keeps jsonwebtoken (Node-only) out of the webpack/browser bundle.
+// Dynamic imports keep Node-only modules (jsonwebtoken, crypto, fs) out of
+// the webpack/browser bundle. These are only called from fetchAemSpotlight
+// which runs server-side (renders/scripts), never inside a composition.
 const getAccessToken = async (): Promise<string | null> => {
   const { getAccessToken: _get } = await import("./tokenManager");
   return _get();
+};
+
+const getCachedAemResponse = async <T>(key: string): Promise<T | null> => {
+  const { getCachedAemResponse: _get } = await import("../cache");
+  return _get<T>(key);
+};
+
+const cacheAemResponse = async <T>(key: string, data: T): Promise<void> => {
+  const { cacheAemResponse: _set } = await import("../cache");
+  _set(key, data);
 };
 
 // Re-export types for backward compatibility
@@ -280,7 +291,7 @@ export const fetchAemSpotlight = async (
   // Check cache first (unless using mock)
   const cacheKey = contentFragmentPath || "/content/dam/content-fragments/spotlight";
   if (!useMock && baseUrl) {
-    const cached = getCachedAemResponse<AemSpotlight>(cacheKey);
+    const cached = await getCachedAemResponse<AemSpotlight>(cacheKey);
     if (cached) {
       console.info("[AEM] Using cached response");
       return cached;
@@ -401,7 +412,7 @@ export const fetchAemSpotlight = async (
     telemetryTracker.complete(spotlight.scenes.length);
 
     // Cache successful response
-    cacheAemResponse(cacheKey, spotlight);
+    await cacheAemResponse(cacheKey, spotlight);
 
     return spotlight;
   } catch (error) {
