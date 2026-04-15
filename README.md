@@ -35,7 +35,7 @@ npm run render:all
 ```
 remotion-aem-showcase/
 ├── src/
-│   ├── index.ts                    # Composition registry
+│   ├── index.tsx                   # Composition registry
 │   ├── aem/
 │   │   ├── aemClient.ts           # AEM GraphQL client
 │   │   ├── aemClient.test.ts      # TDD test suite
@@ -125,10 +125,10 @@ node scripts/upload-to-aem.js out/spotlight_16x9.mp4 /content/dam/spotlight/vide
 
 | ID | Dimensions | Use Case |
 |----|------------|----------|
-| `AEMSpotlight_16x9` | 1280x720 | YouTube, Desktop, TV |
-| `AEMSpotlight_9x16` | 720x1280 | Instagram Stories, TikTok, Reels |
-| `AEMSpotlight_1x1` | 1080x1080 | Instagram Feed, LinkedIn |
-| `AEMSpotlight_4K` | 3840x2160 | Premium content |
+| `AEMSpotlight-16x9` | 1280x720 | YouTube, Desktop, TV |
+| `AEMSpotlight-9x16` | 720x1280 | Instagram Stories, TikTok, Reels |
+| `AEMSpotlight-1x1` | 1080x1080 | Instagram Feed, LinkedIn |
+| `AEMSpotlight-4K` | 3840x2160 | Premium content |
 
 ## AEM Content Fragment Model
 

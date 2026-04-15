@@ -12,8 +12,13 @@ import {
   AemSpotlightSchema,
 } from "./schema";
 import { trackAemFetch, trackError, createTimer } from "../telemetry";
-import { getAccessToken } from "./tokenManager";
 import { getCachedAemResponse, cacheAemResponse } from "../cache";
+
+// Dynamic import keeps jsonwebtoken (Node-only) out of the webpack/browser bundle.
+const getAccessToken = async (): Promise<string | null> => {
+  const { getAccessToken: _get } = await import("./tokenManager");
+  return _get();
+};
 
 // Re-export types for backward compatibility
 export type { AemSpotlight, SpotlightScene, AnimationStyle, RenditionType, EffectType };
