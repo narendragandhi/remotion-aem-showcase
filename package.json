@@ -47,6 +47,7 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.2",
     "@testing-library/react": "^14.1.2",
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.47",
