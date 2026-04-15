@@ -30,7 +30,8 @@
     "health": "npx tsx scripts/health-check.js",
     "health:json": "npx tsx scripts/health-check.js --json",
     "health:live": "npx tsx scripts/health-check.js --live",
-    "health:ready": "npx tsx scripts/health-check.js --ready"
+    "health:ready": "npx tsx scripts/health-check.js --ready",
+    "viral:agent": "npx tsx scripts/viral-agent.ts"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
