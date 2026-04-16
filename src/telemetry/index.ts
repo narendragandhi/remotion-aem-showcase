@@ -41,8 +41,9 @@ export interface AemFetchMetrics {
 
 export interface TelemetryConfig {
   enabled: boolean;
-  backend: "console" | "webhook" | "custom";
+  backend: "console" | "webhook" | "adobe-analytics" | "custom";
   webhookUrl?: string;
+  adobeAnalyticsRsid?: string;
   sampleRate?: number; // 0-1, percentage of events to send
   includeStackTraces?: boolean;
   customHandler?: (event: TelemetryEvent) => void | Promise<void>;
@@ -77,6 +78,7 @@ let config: TelemetryConfig = {
   enabled: process.env.TELEMETRY_ENABLED === "true",
   backend: (process.env.TELEMETRY_BACKEND as TelemetryConfig["backend"]) || "console",
   webhookUrl: process.env.TELEMETRY_WEBHOOK_URL,
+  adobeAnalyticsRsid: process.env.ADOBE_ANALYTICS_RSID,
   sampleRate: parseFloat(process.env.TELEMETRY_SAMPLE_RATE || "1"),
   includeStackTraces: process.env.TELEMETRY_INCLUDE_STACKS !== "false",
 };
@@ -134,11 +136,116 @@ const sendEvent = async (event: TelemetryEvent): Promise<void> => {
       }
       break;
 
+    case "adobe-analytics":
+      await sendToAdobeAnalytics(event, config.adobeAnalyticsRsid);
+      break;
+
     case "custom":
       if (config.customHandler) {
         await config.customHandler(event);
       }
       break;
+  }
+};
+
+/**
+ * Maps a TelemetryEvent to Adobe Analytics Data Insertion API payload fields.
+ * Uses eVar/event numbering conventions; adjust to match your report suite config.
+ */
+const buildAdobeAnalyticsPayload = (
+  event: TelemetryEvent,
+  rsid: string
+): Record<string, unknown> => {
+  const base = {
+    reportSuiteID: rsid,
+    timestamp: Math.floor(Date.now() / 1000),
+    userAgent: "remotion-aem-showcase/0.2.0",
+    pageName: "remotion-render",
+    channel: "video-render",
+  };
+
+  switch (event.type) {
+    case "render": {
+      const d = event.data;
+      return {
+        ...base,
+        pageName: `remotion-render:${d.compositionId}`,
+        events: d.status === "completed" ? "event1" : d.status === "failed" ? "event2" : "",
+        eVar1: d.compositionId,
+        eVar2: `${d.width}x${d.height}`,
+        eVar3: d.status,
+        prop1: String(d.sceneCount),
+        prop2: d.effectsUsed.join(","),
+        prop3: d.wasmEnabled ? "wasm" : "js-fallback",
+        ...(d.renderTimeMs ? { eVar4: String(Math.round(d.renderTimeMs)) } : {}),
+      };
+    }
+    case "aem_fetch": {
+      const d = event.data;
+      return {
+        ...base,
+        pageName: "remotion-render:aem-fetch",
+        events: d.status === "success" ? "event3" : d.status === "fallback" ? "event4" : "event5",
+        eVar5: d.status,
+        eVar6: d.usedMock ? "mock" : "live",
+        prop4: String(d.latencyMs ?? 0),
+      };
+    }
+    case "error": {
+      const d = event.data;
+      return {
+        ...base,
+        pageName: "remotion-render:error",
+        events: "event6",
+        eVar7: d.errorType,
+        eVar8: d.recoverable ? "recoverable" : "fatal",
+        prop5: d.errorMessage.slice(0, 100),
+      };
+    }
+    case "performance": {
+      const d = event.data;
+      return {
+        ...base,
+        pageName: `remotion-render:perf:${d.metric}`,
+        events: "event7",
+        eVar9: d.metric,
+        prop6: String(d.value),
+        prop7: d.unit,
+      };
+    }
+  }
+};
+
+/**
+ * Send event to Adobe Analytics via the Data Insertion API.
+ * Docs: https://developer.adobe.com/analytics-apis/docs/2.0/guides/endpoints/data-insertion/
+ *
+ * This is a server-side REST API — no browser SDK or _satellite required.
+ * Requires ADOBE_ANALYTICS_RSID to be set.
+ */
+const sendToAdobeAnalytics = async (
+  event: TelemetryEvent,
+  rsid: string | undefined
+): Promise<void> => {
+  if (!rsid) {
+    console.warn("[Telemetry] adobe-analytics backend requires ADOBE_ANALYTICS_RSID");
+    return;
+  }
+
+  const endpoint = `https://${rsid}.sc.omtrdc.net/b/ss/${rsid}/6/JSON`;
+  const payload = buildAdobeAnalyticsPayload(event, rsid);
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.warn(`[Telemetry] Adobe Analytics returned ${res.status}`);
+    }
+  } catch (err) {
+    console.warn("[Telemetry] Adobe Analytics delivery failed:", err);
   }
 };
 

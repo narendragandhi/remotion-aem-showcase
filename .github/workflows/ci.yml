@@ -139,6 +139,52 @@ jobs:
           path: ${{ env.WORKING_DIR }}/out/e2e/
           retention-days: 7
 
+  verify-aem:
+    name: Verify AEM Connectivity
+    runs-on: ubuntu-latest
+    needs: validate
+    # Only runs when AEM credentials are configured as repository secrets.
+    # Add AEM_BASE_URL and AEM_TOKEN in Settings > Secrets to enable this job.
+    if: vars.AEM_BASE_URL != ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Verify AEM connectivity
+        run: npm run verify:aem
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          AEM_BASE_URL: ${{ secrets.AEM_BASE_URL }}
+          AEM_TOKEN: ${{ secrets.AEM_TOKEN }}
+          AEM_GRAPHQL_ENDPOINT: ${{ secrets.AEM_GRAPHQL_ENDPOINT }}
+          AEM_CONTENT_FRAGMENT_PATH: ${{ secrets.AEM_CONTENT_FRAGMENT_PATH }}
+
+      - name: Upload verification report
+        if: always()
+        run: npm run verify:aem:json > aem-verification.json 2>&1 || true
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          AEM_BASE_URL: ${{ secrets.AEM_BASE_URL }}
+          AEM_TOKEN: ${{ secrets.AEM_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aem-verification-report
+          path: ${{ env.WORKING_DIR }}/aem-verification.json
+          retention-days: 30
+
   benchmark:
     name: Performance Benchmark
     runs-on: ubuntu-latest

@@ -30,7 +30,9 @@
     "health": "npx tsx scripts/health-check.js",
     "health:json": "npx tsx scripts/health-check.js --json",
     "health:live": "npx tsx scripts/health-check.js --live",
-    "health:ready": "npx tsx scripts/health-check.js --ready"
+    "health:ready": "npx tsx scripts/health-check.js --ready",
+    "verify:aem": "node scripts/verify-aem.js",
+    "verify:aem:json": "node scripts/verify-aem.js --json"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.3",
