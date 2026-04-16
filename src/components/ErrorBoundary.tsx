@@ -1,5 +1,5 @@
 import React, { Component, ReactNode } from "react";
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { SpotlightError, getErrorMessage } from "../errors";
 
 interface ErrorBoundaryProps {
@@ -130,6 +130,10 @@ export const ErrorFallbackUI: React.FC<ErrorFallbackUIProps> = ({ error }) => {
 export const LoadingFallback: React.FC<{ message?: string }> = ({
   message = "Loading...",
 }) => {
+  const frame = useCurrentFrame();
+  // One full rotation every 30 frames (1 second at 30fps)
+  const rotation = interpolate(frame % 30, [0, 30], [0, 360]);
+
   return (
     <AbsoluteFill
       style={{
@@ -150,17 +154,10 @@ export const LoadingFallback: React.FC<{ message?: string }> = ({
           borderTopColor: "#ffffff",
           borderRadius: "50%",
           marginBottom: "1rem",
-          animation: "spin 1s linear infinite",
+          transform: `rotate(${rotation}deg)`,
         }}
       />
       <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>{message}</p>
-      <style>
-        {`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}
-      </style>
     </AbsoluteFill>
   );
 };

@@ -1,5 +1,7 @@
 import {
   AbsoluteFill,
+  continueRender,
+  delayRender,
   interpolate,
   Img,
   spring,
@@ -9,7 +11,6 @@ import {
   staticFile,
 } from "remotion";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Lottie, LottieAnimationData } from "@remotion/lottie";
 import {
   AemSpotlight,
   SpotlightScene,
@@ -26,7 +27,6 @@ import {
   SpotlightErrorBoundary,
   AssetErrorPlaceholder,
 } from "../components/ErrorBoundary";
-import { AssetLoadError } from "../errors";
 import {
   trackRenderStart,
   trackRenderComplete,
@@ -64,24 +64,51 @@ const ANIMATION_PRESETS: Record<AnimationStyle, AnimationConfig> = {
   },
 };
 
-interface LottieState {
-  data: LottieAnimationData | null;
-  loading: boolean;
-  error: Error | null;
-}
+/**
+ * Frame-driven radial pulse background — replaces @remotion/lottie.
+ * No async loading required; driven entirely by useCurrentFrame + spring.
+ */
+const PulseBackground: React.FC<{ color: string; fps: number }> = ({
+  color,
+  fps,
+}) => {
+  const frame = useCurrentFrame();
+  // Slow breathe: one cycle every 90 frames (3 s at 30 fps)
+  const cycle = frame % 90;
+  const breathe = spring({ frame: cycle, fps, config: { mass: 2, damping: 40, stiffness: 40 } });
+  const scale = interpolate(breathe, [0, 1], [1, 1.3]);
+  const opacity = interpolate(breathe, [0, 1], [0.08, 0.18]);
+
+  return (
+    <AbsoluteFill style={{ overflow: "hidden" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: "140%",
+          paddingBottom: "140%",
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${color}cc 0%, ${color}00 70%)`,
+          opacity,
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
 
 const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
   scene,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames, width, height } = useVideoConfig();
-  const [lottieState, setLottieState] = useState<LottieState>({
-    data: null,
-    loading: false,
-    error: null,
-  });
   const [imageError, setImageError] = useState(false);
   const [wasmReady, setWasmReady] = useState(false);
+
+  // delayRender: Remotion holds every frame until continueRender is called,
+  // ensuring WASM effects are ready before the first frame is captured.
+  const [wasmHandle] = useState(() => delayRender("Warming up WASM effects"));
 
   const preset =
     ANIMATION_PRESETS[scene.animationStyle] || ANIMATION_PRESETS.minimal;
@@ -90,52 +117,23 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
   const isPortrait = height > width;
   const isSquare = Math.abs(height - width) < 10;
 
-  // Initialize WASM
+  // Initialize WASM — always unblock render when done (success or failure)
   useEffect(() => {
-    warmupSpotlightWasm().then(() => setWasmReady(true));
-  }, []);
-
-  // Load Lottie animation with proper error handling
-  useEffect(() => {
-    if (!scene.lottieUrl) return;
-
-    setLottieState({ data: null, loading: true, error: null });
-
-    const resolvedUrl = scene.lottieUrl.startsWith("http")
-      ? scene.lottieUrl
-      : staticFile(scene.lottieUrl);
-
-    fetch(resolvedUrl)
-      .then((res) => {
-        if (!res.ok) {
-          throw new AssetLoadError(
-            `Failed to load Lottie: ${res.status}`,
-            scene.lottieUrl,
-            "lottie"
-          );
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setLottieState({ data, loading: false, error: null });
-      })
-      .catch((err) => {
-        console.error("[Lottie] Load error:", err);
-        setLottieState({
-          data: null,
-          loading: false,
-          error: err instanceof Error ? err : new Error(String(err)),
-        });
-      });
-  }, [scene.lottieUrl]);
+    warmupSpotlightWasm()
+      .then(() => setWasmReady(true))
+      .catch(() => {}) // graceful degradation: JS fallback will be used
+      .finally(() => continueRender(wasmHandle));
+  }, [wasmHandle]);
 
   // Calculate normalized progress for effects
   const normalized = Math.min(frame / Math.max(durationInFrames - 1, 1), 1);
 
-  // WASM Effects (with graceful degradation)
+  // WASM Effects (with graceful degradation to JS fallback)
   const glow =
     scene.effectType === "glow" && wasmReady
       ? calculatePulse(normalized, scene.effectIntensity)
+      : scene.effectType === "glow"
+      ? normalized * scene.effectIntensity
       : 0;
   const glitch =
     scene.effectType === "glitch" && wasmReady
@@ -153,7 +151,7 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
   const titleFontSize = isPortrait ? "6rem" : isSquare ? "4.5rem" : "4rem";
   const subtitleFontSize = isPortrait ? "2rem" : "1.5rem";
 
-  // Dynamic image URL with optimization
+  // Dynamic image URL with AEM rendition optimisation
   const dynamicImageUrl = getDynamicRenditionUrl(
     scene.imageUrl,
     width,
@@ -161,7 +159,6 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
     scene.renditionType
   );
 
-  // Image error handler
   const handleImageError = useCallback(() => {
     console.error("[Image] Failed to load:", scene.imageUrl);
     setImageError(true);
@@ -177,12 +174,8 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
             : "none",
       }}
     >
-      {/* Lottie Background Overlay */}
-      {lottieState.data && (
-        <AbsoluteFill style={{ opacity: 0.15, transform: "scale(1.2)" }}>
-          <Lottie animationData={lottieState.data} />
-        </AbsoluteFill>
-      )}
+      {/* Native Remotion pulse background — frame-driven, no async loading */}
+      <PulseBackground color="#ffffff" fps={fps} />
 
       {/* Main Content */}
       <div
@@ -302,7 +295,7 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
         </div>
       </div>
 
-      {/* SVG Overlay */}
+      {/* SVG Overlay (e.g. brand icon) */}
       {scene.svgOverlayUrl && (
         <div
           style={{
@@ -315,9 +308,11 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
           }}
         >
           <Img
-            src={scene.svgOverlayUrl.startsWith("http")
-              ? scene.svgOverlayUrl
-              : staticFile(scene.svgOverlayUrl)}
+            src={
+              scene.svgOverlayUrl.startsWith("http")
+                ? scene.svgOverlayUrl
+                : staticFile(scene.svgOverlayUrl)
+            }
             style={{ width: "100%", height: "100%" }}
             onError={() =>
               console.warn("[SVG] Failed to load:", scene.svgOverlayUrl)
@@ -342,7 +337,7 @@ export const SpotlightComposition: React.FC<SpotlightProps> = ({
   const metricsRef = useRef<RenderMetrics | null>(null);
   const renderStartedRef = useRef(false);
 
-  // Track render start (only once)
+  // Track render start (only once per composition mount)
   useEffect(() => {
     if (renderStartedRef.current) return;
     renderStartedRef.current = true;
@@ -368,7 +363,7 @@ export const SpotlightComposition: React.FC<SpotlightProps> = ({
     });
   }, [spotlight, width, height, durationInFrames, fps]);
 
-  // Track render completion (when we reach the last frame)
+  // Track render completion at the last frame
   useEffect(() => {
     if (frame === durationInFrames - 1 && metricsRef.current) {
       trackRenderComplete(metricsRef.current);
@@ -376,7 +371,6 @@ export const SpotlightComposition: React.FC<SpotlightProps> = ({
   }, [frame, durationInFrames]);
 
   if (!spotlight || !spotlight.scenes || spotlight.scenes.length === 0) {
-    // Track error for empty content
     if (metricsRef.current) {
       trackRenderError(metricsRef.current, new Error("No content available"));
     }

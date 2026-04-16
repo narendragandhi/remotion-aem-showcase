@@ -1,19 +1,33 @@
 {
-  "id": "agent-generated-1776217313917",
+  "id": "/content/dam/content-fragments/spotlight",
   "scenes": [
     {
-      "title": "The Great Eclipse",
-      "subtitle": "A ONCE IN A LIFETIME EVENT",
-      "cta": "Where to Watch",
-      "brandColor": "#0a0a2e",
-      "imageUrl": "https://images.unsplash.com/photo-1582647509711-c8aa8a8bda71?auto=format&fit=crop&q=80&w=1280",
+      "title": "AEM + Remotion",
+      "subtitle": "DYNAMIC CONTENT",
+      "cta": "Explore the Cloud",
+      "brandColor": "#0E3B5A",
+      "imageUrl": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
       "animationStyle": "cinematic",
-      "effectType": "glow",
-      "effectIntensity": 0.9,
-      "durationSeconds": 5,
       "renditionType": "optimized",
-      "lottieUrl": "",
+      "effectType": "glow",
+      "effectIntensity": 0.8,
+      "lottieUrl": "spotlight_bg.json",
       "svgOverlayUrl": ""
+    },
+    {
+      "title": "Scale with WASM",
+      "subtitle": "HIGH PERFORMANCE",
+      "cta": "Read the Docs",
+      "brandColor": "#1A1A1A",
+      "imageUrl": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "energetic",
+      "renditionType": "web",
+      "effectType": "glitch",
+      "effectIntensity": 0.4,
+      "lottieUrl": "",
+      "svgOverlayUrl": "aem-icon.svg"
     }
   ]
 }
