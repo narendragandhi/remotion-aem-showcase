@@ -41,9 +41,8 @@ export interface AemFetchMetrics {
 
 export interface TelemetryConfig {
   enabled: boolean;
-  backend: "console" | "adobe-analytics" | "webhook" | "custom";
+  backend: "console" | "webhook" | "custom";
   webhookUrl?: string;
-  adobeAnalyticsReportSuite?: string;
   sampleRate?: number; // 0-1, percentage of events to send
   includeStackTraces?: boolean;
   customHandler?: (event: TelemetryEvent) => void | Promise<void>;
@@ -78,7 +77,6 @@ let config: TelemetryConfig = {
   enabled: process.env.TELEMETRY_ENABLED === "true",
   backend: (process.env.TELEMETRY_BACKEND as TelemetryConfig["backend"]) || "console",
   webhookUrl: process.env.TELEMETRY_WEBHOOK_URL,
-  adobeAnalyticsReportSuite: process.env.ADOBE_ANALYTICS_RSID,
   sampleRate: parseFloat(process.env.TELEMETRY_SAMPLE_RATE || "1"),
   includeStackTraces: process.env.TELEMETRY_INCLUDE_STACKS !== "false",
 };
@@ -136,11 +134,6 @@ const sendEvent = async (event: TelemetryEvent): Promise<void> => {
       }
       break;
 
-    case "adobe-analytics":
-      // Adobe Analytics implementation
-      sendToAdobeAnalytics(event);
-      break;
-
     case "custom":
       if (config.customHandler) {
         await config.customHandler(event);
@@ -171,21 +164,6 @@ const flushEvents = async (): Promise<void> => {
 
   for (const event of events) {
     await sendEvent(event);
-  }
-};
-
-/**
- * Send to Adobe Analytics (stub - implement with actual SDK)
- */
-const sendToAdobeAnalytics = (event: TelemetryEvent): void => {
-  // Integration with Adobe Analytics
-  // In production, use @adobe/alloy or s.tl() calls
-  if (typeof window !== "undefined" && (window as unknown as { _satellite?: { track: (name: string, data: unknown) => void } })._satellite) {
-    const satellite = (window as unknown as { _satellite: { track: (name: string, data: unknown) => void } })._satellite;
-    satellite.track(`remotion_${event.type}`, event.data);
-  } else {
-    // Server-side: use Adobe Analytics Data Insertion API
-    console.log(`[Adobe Analytics] ${event.type}:`, event.data);
   }
 };
 

@@ -7,7 +7,7 @@ A production-ready showcase demonstrating how AEM Content Fragments orchestrate 
 - **Multi-Channel Delivery**: 16:9, 9:16, 1:1, and 4K compositions from a single codebase
 - **AEM Integration**: GraphQL-powered content from AEM as a Cloud Service
 - **Animation Presets**: Cinematic, Energetic, and Minimal motion styles
-- **WASM Effects**: Hardware-accelerated glow and glitch effects with JS fallback
+- **WASM Effects**: Custom pulse/glitch math in WebAssembly with identical JS fallback
 - **Type Safety**: Zod schema validation for all AEM data
 - **Error Resilience**: Graceful fallbacks and error boundaries throughout
 
@@ -182,12 +182,16 @@ All errors are recoverable with graceful fallbacks to mock data or placeholder U
 
 ### WASM Effects
 
-The project uses WebAssembly for compute-intensive visual effects:
+The project implements custom pulse and glitch math in a hand-written `.wat` module,
+loaded via Remotion's `staticFile()` helper with an identical JS fallback.
 
-- **Pulse/Glow**: Smooth CTA button glow animation
-- **Glitch**: Pseudo-random visual distortion
+- **Pulse/Glow**: Smooth CTA button glow driven by normalised frame progress
+- **Glitch**: Pseudo-random distortion applied to hue-rotate and translate transforms
 
-WASM is loaded via Remotion's `staticFile()` helper with automatic JS fallback for environments without WASM support.
+The WASM value here is demonstrating the integration pattern (async load, `delayRender`
+gating, graceful fallback) rather than raw compute performance — the JS fallback
+produces identical output. A real production use case would move heavier per-frame
+processing (colour grading, noise generation) into WASM.
 
 ## Development
 
