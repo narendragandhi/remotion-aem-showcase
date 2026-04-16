@@ -14,7 +14,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import fetch from 'node-fetch';
+// fetch is available globally in Node 18+ (project requires node >=18.0.0)
 
 const filePath = process.argv[2];
 const aemDestPath = process.argv[3];

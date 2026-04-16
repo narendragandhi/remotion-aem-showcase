@@ -14,7 +14,7 @@
 
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
-import fetch from 'node-fetch';
+// fetch is available globally in Node 18+ (project requires node >=18.0.0)
 
 const {
   IMS_ORG_ID,
