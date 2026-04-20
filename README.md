@@ -1,5 +1,9 @@
 # Remotion AEM Spotlight
 
+[![CI](https://github.com/narendragandhi/remotion-aem-showcase/actions/workflows/ci.yml/badge.svg)](https://github.com/narendragandhi/remotion-aem-showcase/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange)](./package.json)
+
 A production-ready showcase demonstrating how AEM Content Fragments orchestrate Remotion video compositions. This project follows BMAD/BEAD methodologies and enforces TDD guardrails for enterprise-grade video delivery.
 
 ## Features
@@ -10,6 +14,18 @@ A production-ready showcase demonstrating how AEM Content Fragments orchestrate 
 - **WASM Effects**: Custom pulse/glitch math in WebAssembly with identical JS fallback
 - **Type Safety**: Zod schema validation for all AEM data
 - **Error Resilience**: Graceful fallbacks and error boundaries throughout
+
+## Demo
+
+Smoke-rendered stills from the latest build — all generated from a single AEM Content Fragment:
+
+| 16:9 — Desktop / YouTube | 9:16 — Stories / Reels | 1:1 — Feed / LinkedIn |
+|:---:|:---:|:---:|
+| ![16x9 still](./out/smoke_16x9.png) | ![9x16 still](./out/smoke_9x16.png) | ![1x1 still](./out/smoke_1x1.png) |
+
+> Full video renders (`.mp4`) are attached to each [GitHub Release](../../releases).
+
+---
 
 ## Quick Start
 
@@ -259,7 +275,7 @@ See `/docs` for detailed methodology documentation.
 
 ## License
 
-Proprietary - Adobe Internal Use
+Apache 2.0 — see [LICENSE](./LICENSE)
 
 ## Contributing
 
