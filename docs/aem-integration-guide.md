@@ -217,11 +217,11 @@ For production deployments, use an Adobe IMS Service Account:
 2. **Configure Environment**:
    ```bash
    # JWT Authentication (for scripts/aem-auth.js)
-   AEM_IMS_ORG=your-org-id@AdobeOrg
+   AEM_IMS_ORG_ID=your-org-id@AdobeOrg
    AEM_IMS_CLIENT_ID=your-client-id
    AEM_IMS_CLIENT_SECRET=your-client-secret
    AEM_IMS_TECHNICAL_ACCOUNT_ID=your-tech-account@techacct.adobe.com
-   AEM_IMS_PRIVATE_KEY_PATH=./private.key
+   AEM_IMS_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
    ```
 
 3. **Exchange JWT for Bearer Token**:
