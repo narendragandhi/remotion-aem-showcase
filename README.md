@@ -21,7 +21,7 @@ Smoke-rendered stills from the latest build — all generated from a single AEM 
 
 | 16:9 — Desktop / YouTube | 9:16 — Stories / Reels | 1:1 — Feed / LinkedIn |
 |:---:|:---:|:---:|
-| ![16x9 still](./out/smoke_16x9.png) | ![9x16 still](./out/smoke_9x16.png) | ![1x1 still](./out/smoke_1x1.png) |
+| ![16x9 still](./docs/stills/smoke_16x9.png) | ![9x16 still](./docs/stills/smoke_9x16.png) | ![1x1 still](./docs/stills/smoke_1x1.png) |
 
 > Full video renders (`.mp4`) are attached to each [GitHub Release](../../releases).
 
