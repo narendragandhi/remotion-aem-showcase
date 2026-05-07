@@ -32,9 +32,13 @@
     "health:live": "npx tsx scripts/health-check.js --live",
     "health:ready": "npx tsx scripts/health-check.js --ready",
     "verify:aem": "node scripts/verify-aem.js",
-    "verify:aem:json": "node scripts/verify-aem.js --json"
+    "verify:aem:json": "node scripts/verify-aem.js --json",
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "preview:web": "vite preview"
   },
   "dependencies": {
+    "@remotion/player": "^4.0.0",
     "jsonwebtoken": "^9.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -43,6 +47,7 @@
   },
   "devDependencies": {
     "@remotion/cli": "^4.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
     "@testing-library/react": "^14.1.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.10.6",
@@ -58,6 +63,7 @@
     "jsdom": "^23.2.0",
     "prettier": "^3.2.2",
     "typescript": "^5.3.3",
+    "vite": "^5.4.0",
     "vitest": "^1.1.4"
   },
   "engines": {

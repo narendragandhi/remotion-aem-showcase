@@ -1,13 +1,8 @@
 import { staticFile } from "remotion";
 
-/**
- * High-Performance Animation Math (Principal-Grade)
- * 
- * Maintainability Note: 
- * We use pure TypeScript as the primary implementation to ensure 
- * AEM Content Engineers can easily adjust the motion curves.
- * WASM is retained as a performance-optimized fallback.
- */
+// Animation math for pulse and glitch effects.
+// WASM (spotlight_effects.wasm) is used when available; the TS functions below
+// are the JS fallback invoked when WASM fails to load.
 export const spotlightMath = {
   calculatePulse: (progress: number, amplitude: number): number => {
     const p = Math.max(0, Math.min(1, progress));

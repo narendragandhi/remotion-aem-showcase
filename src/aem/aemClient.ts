@@ -220,7 +220,7 @@ const mapSingleItemToScene = (
     cta: item.cta ?? "Learn more",
     brandColor: item.brandColor ?? "#0E3B5A",
     imageUrl: resolveAssetUrl(imageUrl, config),
-    durationSeconds: Number(item.durationSeconds) || defaultScene.durationSeconds || 4,
+    durationSeconds: Math.round(Number(item.durationSeconds) || defaultScene.durationSeconds || 4),
     animationStyle: (item.animationStyle as AnimationStyle) ?? "minimal",
     renditionType: (item.renditionType as RenditionType) ?? "optimized",
     effectType: (item.effectType as EffectType) ?? "none",

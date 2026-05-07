@@ -21,8 +21,6 @@ export type EffectType = z.infer<typeof EffectTypeSchema>;
 const cssColorRegex = /^(#([0-9A-Fa-f]{3}){1,2}|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|[a-zA-Z]+)$/;
 const CssColorSchema = z.string().regex(cssColorRegex, "Invalid CSS color format").or(z.string().min(1));
 
-// URL validation (absolute or relative paths)
-const UrlSchema = z.string().min(1);
 
 /**
  * Schema for a single spotlight scene.
@@ -33,7 +31,7 @@ export const SpotlightSceneSchema = z.object({
   subtitle: z.string().default(""),
   cta: z.string().min(1).default("Learn more"),
   brandColor: CssColorSchema.default("#0E3B5A"),
-  imageUrl: UrlSchema,
+  imageUrl: z.string().default(""),
   durationSeconds: z.number().positive().int().default(4),
   animationStyle: AnimationStyleSchema.default("minimal"),
   renditionType: RenditionTypeSchema.default("optimized"),

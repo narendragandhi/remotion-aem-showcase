@@ -226,20 +226,6 @@ const SpotlightSceneComponent: React.FC<{ scene: SpotlightScene }> = ({
           >
             {scene.title}
           </h1>
-          <p
-            style={{
-              fontSize: "1.25rem",
-              maxWidth: "28rem",
-              opacity: 0.9,
-              lineHeight: 1.5,
-            }}
-          >
-            AEM-driven{" "}
-            {scene.effectType !== "none"
-              ? scene.effectType
-              : scene.animationStyle}{" "}
-            visual experience.
-          </p>
           <div
             style={{
               marginTop: "2rem",
