@@ -81,11 +81,17 @@ async function run() {
   if (!jsonMode) console.log("  Checking GraphQL endpoint…");
   const graphqlUrl = `${AEM_BASE_URL}${AEM_GRAPHQL_ENDPOINT}`;
   try {
+    const authHeader = AEM_TOKEN
+      ? (AEM_TOKEN.startsWith("Basic ") || AEM_TOKEN.startsWith("Bearer "))
+        ? AEM_TOKEN
+        : `Bearer ${AEM_TOKEN}`
+      : null;
+
     const res = await fetch(graphqlUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(AEM_TOKEN ? { Authorization: `Bearer ${AEM_TOKEN}` } : {}),
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body: JSON.stringify({ query: "{ __typename }" }),
     });
@@ -118,11 +124,17 @@ async function run() {
     }
   `;
   try {
+    const authHeader = AEM_TOKEN
+      ? (AEM_TOKEN.startsWith("Basic ") || AEM_TOKEN.startsWith("Bearer "))
+        ? AEM_TOKEN
+        : `Bearer ${AEM_TOKEN}`
+      : null;
+
     const res = await fetch(graphqlUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(AEM_TOKEN ? { Authorization: `Bearer ${AEM_TOKEN}` } : {}),
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body: JSON.stringify({ query: cfQuery }),
     });

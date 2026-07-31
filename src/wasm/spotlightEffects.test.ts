@@ -3,7 +3,12 @@ import {
   spotlightMath,
   resetWasmState,
   isWasmAvailable,
+  warmupSpotlightWasm,
+  calculatePulse,
+  calculateGlitch,
 } from "./spotlightEffects";
+import fs from "fs";
+import path from "path";
 
 describe("spotlightEffects", () => {
   beforeEach(() => {
@@ -50,6 +55,60 @@ describe("spotlightEffects", () => {
   describe("WASM Availability", () => {
     it("returns false when WASM not loaded", () => {
       expect(isWasmAvailable()).toBe(false);
+    });
+  });
+
+  describe("WASM Loading and Integration", () => {
+    it("should load WASM and execute math correctly matching JS", async () => {
+      const wasmPath = path.join(process.cwd(), "public/spotlight_effects.wasm");
+      const wasmBuffer = fs.readFileSync(wasmPath);
+
+      // Mock fetch response for WASM loading
+      const mockFetch = vi.mocked(global.fetch);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        arrayBuffer: async () => wasmBuffer.buffer.slice(
+          wasmBuffer.byteOffset,
+          wasmBuffer.byteOffset + wasmBuffer.byteLength
+        ),
+      } as unknown as Response);
+
+      await warmupSpotlightWasm();
+      expect(isWasmAvailable()).toBe(true);
+
+      // Verify that WASM calculation matches TS calculation
+      const testCases = [
+        { p: 0.0, amp: 0.5, intensity: 0.5 },
+        { p: 0.25, amp: 0.8, intensity: 0.4 },
+        { p: 0.5, amp: 0.6, intensity: 0.7 },
+        { p: 0.75, amp: 0.9, intensity: 0.2 },
+        { p: 1.0, amp: 0.7, intensity: 0.9 },
+      ];
+
+      for (const { p, amp, intensity } of testCases) {
+        const wasmPulse = calculatePulse(p, amp);
+        const jsPulse = spotlightMath.calculatePulse(p, amp);
+        expect(wasmPulse).toBeCloseTo(jsPulse, 5);
+
+        const wasmGlitch = calculateGlitch(p, intensity);
+        const jsGlitch = spotlightMath.calculateGlitch(p, intensity);
+        expect(wasmGlitch).toBeCloseTo(jsGlitch, 5);
+      }
+    });
+
+    it("falls back gracefully to JS when fetch fails", async () => {
+      const mockFetch = vi.mocked(global.fetch);
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      } as unknown as Response);
+
+      await warmupSpotlightWasm();
+      expect(isWasmAvailable()).toBe(false);
+
+      const pulse = calculatePulse(0.5, 0.8);
+      const expectedPulse = spotlightMath.calculatePulse(0.5, 0.8);
+      expect(pulse).toBe(expectedPulse);
     });
   });
 });

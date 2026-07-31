@@ -37,10 +37,12 @@ async function uploadToAemCS() {
     const initiateUrl = `${baseUrl}/api/assets${path.dirname(aemDestPath)}.initiateUpload.json`;
     console.log(`[1/3] Initiating upload at ${initiateUrl}...`);
     
+    const authHeader = (token.startsWith('Basic ') || token.startsWith('Bearer ')) ? token : `Bearer ${token}`;
+
     const initRes = await fetch(initiateUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
@@ -74,10 +76,12 @@ async function uploadToAemCS() {
     console.log(`[3/3] Finalizing upload in AEM DAM...`);
     const completeUrl = `${baseUrl}/api/assets${path.dirname(aemDestPath)}.completeUpload.json`;
     
+    const authHeader = (token.startsWith('Basic ') || token.startsWith('Bearer ')) ? token : `Bearer ${token}`;
+
     const completeRes = await fetch(completeUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({

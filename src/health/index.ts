@@ -6,7 +6,7 @@
  */
 
 import { getAemConfig, fetchAemSpotlight } from "../aem/aemClient";
-import { warmupSpotlightWasm, isWasmAvailable } from "../wasm/spotlightEffects";
+import { warmupSpotlightWasm, isWasmAvailable, getWasmError } from "../wasm/spotlightEffects";
 import { getTelemetryStatus, trackPerformance } from "../telemetry";
 
 export interface HealthStatus {
@@ -85,14 +85,21 @@ export const checkWasmHealth = async (): Promise<ComponentHealth> => {
   try {
     await warmupSpotlightWasm();
     const available = isWasmAvailable();
+    const wasmError = getWasmError();
     const latency = Date.now() - startTime;
 
     trackPerformance("health_check_wasm", latency, "ms", { available });
 
+    const message = available
+      ? "WASM loaded successfully"
+      : wasmError
+      ? `WASM unavailable, using JS fallback: ${wasmError.message}`
+      : "WASM unavailable, using JS fallback";
+
     return {
       status: available ? "up" : "degraded",
       latencyMs: latency,
-      message: available ? "WASM loaded successfully" : "WASM unavailable, using JS fallback",
+      message,
       lastChecked: new Date().toISOString(),
     };
   } catch (error) {

@@ -266,7 +266,7 @@ jobs:
           retention-days: 30
 
       - name: Deploy to AEM DAM
-        if: env.AEM_BASE_URL != ''
+        if: secrets.AEM_BASE_URL != ''
         run: |
           for video in out/*.mp4; do
             node scripts/upload-to-aem.js "$video" "/content/dam/remotion-showcase/$(basename $video)"

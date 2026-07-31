@@ -348,13 +348,40 @@ export const fetchAemSpotlight = async (
   try {
     // Get token (supports both static and IMS auto-refresh)
     const accessToken = token || (await getAccessToken());
+    const authHeader = accessToken
+      ? (accessToken.startsWith("Basic ") || accessToken.startsWith("Bearer "))
+        ? accessToken
+        : `Bearer ${accessToken}`
+      : null;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (authHeader) {
+      headers["Authorization"] = authHeader;
+    }
+
+    // Fetch CSRF token for Basic Auth on Author tier
+    if (authHeader && authHeader.startsWith("Basic ") && baseUrl) {
+      try {
+        const csrfUrl = `${baseUrl}/libs/granite/csrf/token.json`;
+        const csrfRes = await fetch(csrfUrl, {
+          headers: { Authorization: authHeader },
+        });
+        if (csrfRes.ok) {
+          const csrfData = await csrfRes.json();
+          if (csrfData.token) {
+            headers["CSRF-Token"] = csrfData.token;
+          }
+        }
+      } catch (err) {
+        console.warn("[AEM] Failed to fetch CSRF token:", err);
+      }
+    }
 
     const res = await fetch(endpoint, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      },
+      headers,
       ...(body ? { body } : {}),
     });
 

@@ -32,3 +32,4 @@ coverage/
 
 # Remotion cache
 .remotion/
+.vercel

@@ -26,10 +26,29 @@ export const warmupSpotlightWasm = async (): Promise<void> => {
 
   wasmLoadPromise = (async () => {
     try {
-      const wasmPath = staticFile("spotlight_effects.wasm");
-      const response = await fetch(wasmPath);
-      if (!response.ok) throw new Error(`WASM Fetch failed: ${response.status}`);
-      const buffer = await response.arrayBuffer();
+      let buffer: ArrayBuffer;
+
+      if (typeof window === "undefined") {
+        // Node.js environment (e.g. CLI rendering, health checks, tests)
+        const fs = await import("fs");
+        const path = await import("path");
+        let wasmPath = path.join(process.cwd(), "public/spotlight_effects.wasm");
+        if (!fs.existsSync(wasmPath)) {
+          wasmPath = path.join(process.cwd(), "src/wasm/spotlight_effects.wasm");
+        }
+        const fileBuffer = fs.readFileSync(wasmPath);
+        buffer = fileBuffer.buffer.slice(
+          fileBuffer.byteOffset,
+          fileBuffer.byteOffset + fileBuffer.byteLength
+        );
+      } else {
+        // Browser environment (e.g. preview player)
+        const wasmPath = staticFile("spotlight_effects.wasm");
+        const response = await fetch(wasmPath);
+        if (!response.ok) throw new Error(`WASM Fetch failed: ${response.status}`);
+        buffer = await response.arrayBuffer();
+      }
+
       const module = await WebAssembly.instantiate(buffer);
       wasmInstance = module.instance;
     } catch (error) {
@@ -39,6 +58,8 @@ export const warmupSpotlightWasm = async (): Promise<void> => {
 
   return wasmLoadPromise;
 };
+
+export const getWasmError = (): Error | null => wasmLoadError;
 
 export const calculatePulse = (progress: number, amplitude: number): number => {
   if (wasmInstance) {
