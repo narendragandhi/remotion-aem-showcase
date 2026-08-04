@@ -54,23 +54,35 @@ async function uploadToAemCS() {
     if (!initRes.ok) throw new Error(`Initiate failed: ${initRes.status} ${await initRes.text()}`);
     
     const initData = await initRes.json();
-    const { uploadToken, files } = initData;
-    const { uploadUrls, mimeType } = files[0];
+    const { files } = initData;
+    const uploadFile = files?.[0];
+    if (!uploadFile?.uploadUrls?.length) {
+      throw new Error('Initiate response did not contain upload URLs');
+    }
+    const { uploadToken, uploadUrls, mimeType } = uploadFile;
 
     // STEP 2: Upload Binary to Blob Storage
     console.log(`[2/3] Uploading binary to ${uploadUrls.length} part(s)...`);
     
-    // For simplicity, we assume the file fits in the first part (AEM CS parts are usually 5MB-100MB)
-    // In a full implementation, we would slice the file based on the parts provided.
     const fileBuffer = fs.readFileSync(filePath);
-    
-    const uploadRes = await fetch(uploadUrls[0], {
-      method: 'PUT',
-      headers: { 'Content-Type': mimeType },
-      body: fileBuffer
-    });
+    const partSize = Math.ceil(fileBuffer.length / uploadUrls.length);
 
-    if (!uploadRes.ok) throw new Error(`Blob upload failed: ${uploadRes.status}`);
+    for (let index = 0; index < uploadUrls.length; index += 1) {
+      const start = index * partSize;
+      const end = Math.min(start + partSize, fileBuffer.length);
+      const uploadRes = await fetch(uploadUrls[index], {
+        method: 'PUT',
+        headers: {
+          'Content-Type': mimeType || 'application/octet-stream',
+          'Content-Length': String(end - start),
+        },
+        body: fileBuffer.subarray(start, end),
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error(`Blob upload failed for part ${index + 1}: ${uploadRes.status}`);
+      }
+    }
 
     // STEP 3: Complete Upload
     console.log(`[3/3] Finalizing upload in AEM DAM...`);

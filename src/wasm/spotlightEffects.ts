@@ -13,7 +13,7 @@ export const spotlightMath = {
     const p = Math.max(0, Math.min(1, progress));
     const i = Math.max(0, Math.min(1, intensity));
     return ((Math.ceil(p * 100) * 7 + 13) / 10) * i - 0.5;
-  },
+  }
 };
 
 let wasmInstance: WebAssembly.Instance | null = null;
@@ -66,7 +66,9 @@ export const calculatePulse = (progress: number, amplitude: number): number => {
     try {
       const pulseStrength = wasmInstance.exports.pulseStrength as (p: number, a: number) => number;
       return pulseStrength(progress, amplitude);
-    } catch (e) { /* Fallback */ }
+    } catch (e) {
+      /* Fallback */
+    }
   }
   return spotlightMath.calculatePulse(progress, amplitude);
 };
@@ -76,7 +78,9 @@ export const calculateGlitch = (progress: number, intensity: number): number => 
     try {
       const glitchFactor = wasmInstance.exports.glitchFactor as (p: number, i: number) => number;
       return glitchFactor(progress, intensity);
-    } catch (e) { /* Fallback */ }
+    } catch (e) {
+      /* Fallback */
+    }
   }
   return spotlightMath.calculateGlitch(progress, intensity);
 };

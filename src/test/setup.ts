@@ -7,7 +7,7 @@ vi.mock("remotion", async () => {
     ...actual,
     staticFile: (path: string) => `/public/${path}`,
     delayRender: () => Symbol("delay-render-handle"),
-    continueRender: () => {},
+    continueRender: () => {}
   };
 });
 

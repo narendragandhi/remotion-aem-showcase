@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+    jcr:primaryType="cq:Template"
+    allowedPaths="[/content/dam/remotion(/.*)?]"
+    ranking="{Long}100">
+    <jcr:content
+        cq:scaffolding="/conf/spotlight/settings/dam/cfm/models/spotlight/jcr:content/model"
+        cq:templateType="/libs/settings/dam/cfm/model-types/fragment"
+        jcr:primaryType="cq:PageContent"
+        jcr:title="Spotlight Video Scene"
+        sling:resourceSuperType="dam/cfm/models/console/components/data/entity"
+        sling:resourceType="dam/cfm/models/console/components/data/entity/default">
+        <model
+            cq:targetPath="/content/dam/remotion"
+            jcr:primaryType="cq:PageContent"
+            sling:resourceType="wcm/scaffolding/components/scaffolding"
+            dataTypesConfig="/mnt/overlay/settings/dam/cfm/models/formbuilderconfig/datatypes"
+            maxGeneratedOrder="20">
+            <cq:dialog jcr:primaryType="nt:unstructured" sling:resourceType="cq/gui/components/authoring/dialog">
+                <content jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/fixedcolumns">
+                    <items jcr:primaryType="nt:unstructured" maxGeneratedOrder="20">
+                        <title jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Title" listOrder="1" maxlength="255" metaType="text-single" name="title" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <eyebrow jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Editorial Eyebrow" listOrder="2" maxlength="80" metaType="text-single" name="eyebrow" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <subtitle jcr:primaryType="nt:unstructured" sling:resourceType="dam/cfm/admin/components/authoring/contenteditor/multieditor" fieldLabel="Subtitle" listOrder="2" metaType="text-multi" name="subtitle" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <cta jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="CTA" listOrder="3" maxlength="120" metaType="text-single" name="cta" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <brandColor jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Brand Color" listOrder="4" maxlength="30" metaType="text-single" name="brandColor" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <accentColor jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Motion Accent Color" listOrder="5" maxlength="30" metaType="text-single" name="accentColor" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <metricLabel jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Metric Label" listOrder="6" maxlength="40" metaType="text-single" name="metricLabel" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <metricValue jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Metric Value" listOrder="7" maxlength="40" metaType="text-single" name="metricValue" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <imageUrl jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Image URL or DAM Path" listOrder="5" maxlength="2048" metaType="text-single" name="imageUrl" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <durationSeconds jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/numberfield" fieldLabel="Duration Seconds" listOrder="6" metaType="number" name="durationSeconds" renderReadOnly="false" showEmptyInReadOnly="true" step="1" typeHint="long" valueType="long"/>
+                        <animationStyle jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Animation Style" listOrder="7" maxlength="30" metaType="text-single" name="animationStyle" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <renditionType jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Rendition Type" listOrder="8" maxlength="30" metaType="text-single" name="renditionType" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <effectType jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Effect Type" listOrder="9" maxlength="30" metaType="text-single" name="effectType" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <effectIntensity jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/numberfield" fieldLabel="Effect Intensity" listOrder="10" metaType="number" name="effectIntensity" renderReadOnly="false" showEmptyInReadOnly="true" step="0.1" typeHint="double" valueType="double"/>
+                        <lottieUrl jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="Lottie URL" listOrder="11" maxlength="2048" metaType="text-single" name="lottieUrl" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                        <svgOverlayUrl jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/form/textfield" fieldLabel="SVG Overlay URL" listOrder="12" maxlength="2048" metaType="text-single" name="svgOverlayUrl" renderReadOnly="false" showEmptyInReadOnly="true" valueType="string"/>
+                    </items>
+                </content>
+            </cq:dialog>
+        </model>
+    </jcr:content>
+</jcr:root>

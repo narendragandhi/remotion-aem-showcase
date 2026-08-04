@@ -1,0 +1,9 @@
+# Default review ownership. Add teams as the project grows.
+* @narendragandhi
+
+# Product and contract changes require maintainer review.
+/docs/ @narendragandhi
+/DESIGN.md @narendragandhi
+/src/aem/ @narendragandhi
+/src/compositions/ @narendragandhi
+/src/provenance/ @narendragandhi

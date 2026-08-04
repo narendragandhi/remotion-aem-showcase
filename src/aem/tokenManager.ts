@@ -1,7 +1,9 @@
 /**
  * AEM Token Manager
  *
- * Handles IMS Service Account (JWT) token acquisition and refresh
+ * Handles IMS OAuth Server-to-Server token acquisition and refresh.
+ * Legacy JWT credentials remain supported for AEM Developer Console
+ * integrations that Adobe has not migrated yet.
  * for AEM Cloud Service authentication.
  *
  * Supports:
@@ -16,10 +18,11 @@ import { trackError, trackPerformance, createTimer } from "../telemetry";
 export interface ImsConfig {
   clientId: string;
   clientSecret: string;
-  technicalAccountId: string;
-  orgId: string;
-  privateKey: string;
+  technicalAccountId?: string;
+  orgId?: string;
+  privateKey?: string;
   imsEndpoint?: string;
+  scopes?: string[];
   metascopes?: string[];
 }
 
@@ -39,9 +42,7 @@ const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 const DEFAULT_IMS_ENDPOINT = "https://ims-na1.adobelogin.com";
 
 // Default metascopes for AEM
-const DEFAULT_METASCOPES = [
-  "https://ims-na1.adobelogin.com/s/ent_aem_cloud_api",
-];
+const DEFAULT_METASCOPES = ["https://ims-na1.adobelogin.com/s/ent_aem_cloud_api"];
 
 /**
  * Get IMS configuration from environment variables
@@ -49,23 +50,30 @@ const DEFAULT_METASCOPES = [
 export const getImsConfig = (): ImsConfig | null => {
   const clientId = process.env.AEM_IMS_CLIENT_ID;
   const clientSecret = process.env.AEM_IMS_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    return null;
+  }
+
   const technicalAccountId = process.env.AEM_IMS_TECHNICAL_ACCOUNT_ID;
   const orgId = process.env.AEM_IMS_ORG_ID;
   const privateKey = process.env.AEM_IMS_PRIVATE_KEY;
-
-  if (!clientId || !clientSecret || !technicalAccountId || !orgId || !privateKey) {
-    return null;
-  }
 
   return {
     clientId,
     clientSecret,
     technicalAccountId,
     orgId,
-    // Handle escaped newlines in env var
-    privateKey: privateKey.replace(/\\n/g, "\n"),
+    ...(technicalAccountId && orgId && privateKey
+      ? {
+          technicalAccountId,
+          orgId,
+          privateKey: privateKey.replace(/\\n/g, "\n")
+        }
+      : {}),
     imsEndpoint: process.env.AEM_IMS_ENDPOINT || DEFAULT_IMS_ENDPOINT,
-    metascopes: process.env.AEM_IMS_METASCOPES?.split(",") || DEFAULT_METASCOPES,
+    scopes: process.env.AEM_IMS_SCOPES?.split(",").map((scope) => scope.trim()),
+    metascopes: process.env.AEM_IMS_METASCOPES?.split(",") || DEFAULT_METASCOPES
   };
 };
 
@@ -73,6 +81,9 @@ export const getImsConfig = (): ImsConfig | null => {
  * Create JWT assertion for IMS token exchange
  */
 const createJwtAssertion = (config: ImsConfig): string => {
+  if (!config.technicalAccountId || !config.orgId || !config.privateKey) {
+    throw new Error("Legacy JWT configuration is incomplete");
+  }
   const now = Math.floor(Date.now() / 1000);
   const expiry = now + 60 * 60 * 24; // 24 hours
 
@@ -80,7 +91,7 @@ const createJwtAssertion = (config: ImsConfig): string => {
     exp: expiry,
     iss: config.orgId,
     sub: config.technicalAccountId,
-    aud: `${config.imsEndpoint}/c/${config.clientId}`,
+    aud: `${config.imsEndpoint}/c/${config.clientId}`
   };
 
   // Add metascopes
@@ -94,26 +105,23 @@ const createJwtAssertion = (config: ImsConfig): string => {
 /**
  * Exchange JWT assertion for access token
  */
-const exchangeJwtForToken = async (
-  config: ImsConfig,
-  jwtAssertion: string
-): Promise<TokenInfo> => {
+const exchangeJwtForToken = async (config: ImsConfig, jwtAssertion: string): Promise<TokenInfo> => {
   const timer = createTimer("ims_token_exchange");
   const endpoint = `${config.imsEndpoint}/ims/exchange/jwt`;
 
   const body = new URLSearchParams({
     client_id: config.clientId,
     client_secret: config.clientSecret,
-    jwt_token: jwtAssertion,
+    jwt_token: jwtAssertion
   });
 
   try {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: body.toString(),
+      body: body.toString()
     });
 
     if (!response.ok) {
@@ -121,7 +129,7 @@ const exchangeJwtForToken = async (
       throw new Error(`IMS token exchange failed: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       access_token: string;
       token_type: string;
       expires_in: number;
@@ -132,12 +140,58 @@ const exchangeJwtForToken = async (
     return {
       accessToken: data.access_token,
       expiresAt: Date.now() + data.expires_in * 1000,
-      tokenType: data.token_type || "bearer",
+      tokenType: data.token_type || "bearer"
     };
   } catch (error) {
     timer.stop();
     trackError(
       "ims_token_exchange_error",
+      error instanceof Error ? error : new Error(String(error)),
+      { endpoint }
+    );
+    throw error;
+  }
+};
+
+/** Exchange OAuth Server-to-Server credentials for an access token. */
+const exchangeOAuthForToken = async (config: ImsConfig): Promise<TokenInfo> => {
+  const timer = createTimer("ims_oauth_token_exchange");
+  const endpoint = `${config.imsEndpoint}/ims/token/v3`;
+  const body = new URLSearchParams({
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    grant_type: "client_credentials",
+    scope: (config.scopes || []).join(",")
+  });
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `IMS OAuth token exchange failed: ${response.status} - ${await response.text()}`
+      );
+    }
+
+    const data = (await response.json()) as {
+      access_token: string;
+      token_type?: string;
+      expires_in: number;
+    };
+    timer.stop();
+    return {
+      accessToken: data.access_token,
+      expiresAt: Date.now() + data.expires_in * 1000,
+      tokenType: data.token_type || "bearer"
+    };
+  } catch (error) {
+    timer.stop();
+    trackError(
+      "ims_oauth_token_exchange_error",
       error instanceof Error ? error : new Error(String(error)),
       { endpoint }
     );
@@ -177,8 +231,9 @@ export const getAccessToken = async (config?: ImsConfig): Promise<string | null>
   console.info("[TokenManager] Refreshing IMS access token...");
 
   try {
-    const jwtAssertion = createJwtAssertion(imsConfig);
-    const tokenInfo = await exchangeJwtForToken(imsConfig, jwtAssertion);
+    const tokenInfo = imsConfig.privateKey
+      ? await exchangeJwtForToken(imsConfig, createJwtAssertion(imsConfig))
+      : await exchangeOAuthForToken(imsConfig);
     cachedToken = tokenInfo;
 
     const expiresInMs = tokenInfo.expiresAt - Date.now();
@@ -187,7 +242,7 @@ export const getAccessToken = async (config?: ImsConfig): Promise<string | null>
     );
 
     trackPerformance("token_refresh_success", 1, "count", {
-      expiresInMs,
+      expiresInMs
     });
 
     return tokenInfo.accessToken;
@@ -236,7 +291,7 @@ export const getTokenStatus = (): {
       hasToken: true,
       isExpired: needsRefresh(cachedToken),
       expiresAt: new Date(cachedToken.expiresAt).toISOString(),
-      tokenType: "ims",
+      tokenType: "ims"
     };
   }
 
@@ -244,7 +299,7 @@ export const getTokenStatus = (): {
     return {
       hasToken: true,
       isExpired: false, // Static tokens don't expire (from our perspective)
-      tokenType: "static",
+      tokenType: "static"
     };
   }
 
@@ -252,14 +307,14 @@ export const getTokenStatus = (): {
     return {
       hasToken: false,
       isExpired: true,
-      tokenType: "ims",
+      tokenType: "ims"
     };
   }
 
   return {
     hasToken: false,
     isExpired: true,
-    tokenType: "none",
+    tokenType: "none"
   };
 };
 
@@ -275,14 +330,14 @@ export const validateTokenConfig = async (): Promise<{
   if (!imsConfig && !process.env.AEM_TOKEN) {
     return {
       valid: false,
-      message: "No authentication configured. Set AEM_TOKEN or IMS credentials.",
+      message: "No authentication configured. Set AEM_TOKEN or OAuth IMS credentials."
     };
   }
 
   if (!imsConfig) {
     return {
       valid: true,
-      message: "Using static AEM_TOKEN (no auto-refresh)",
+      message: "Using static AEM_TOKEN (no auto-refresh)"
     };
   }
 
@@ -290,12 +345,12 @@ export const validateTokenConfig = async (): Promise<{
     await getAccessToken(imsConfig);
     return {
       valid: true,
-      message: "IMS authentication configured and working",
+      message: "IMS authentication configured and working"
     };
   } catch (error) {
     return {
       valid: false,
-      message: `IMS authentication failed: ${error instanceof Error ? error.message : String(error)}`,
+      message: `IMS authentication failed: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 };

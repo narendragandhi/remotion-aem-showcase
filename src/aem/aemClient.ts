@@ -9,7 +9,7 @@ import {
   AemGraphQLItem,
   AemGraphQLResponseSchema,
   SpotlightSceneSchema,
-  AemSpotlightSchema,
+  AemSpotlightSchema
 } from "./schema";
 import { trackAemFetch, trackError, createTimer } from "../telemetry";
 
@@ -54,12 +54,13 @@ export interface AemConfig {
 export const getAemConfig = (): AemConfig => ({
   baseUrl: process.env.AEM_BASE_URL ?? "",
   token: process.env.AEM_TOKEN,
-  graphqlEndpoint: process.env.AEM_GRAPHQL_ENDPOINT ?? "/content/graphql/global/endpoint",
-  contentFragmentPath: process.env.AEM_CONTENT_FRAGMENT_PATH ?? "/content/dam/content-fragments/spotlight",
+  graphqlEndpoint: process.env.AEM_GRAPHQL_ENDPOINT ?? "/content/_cq_graphql/global/endpoint.json",
+  contentFragmentPath:
+    process.env.AEM_CONTENT_FRAGMENT_PATH ?? "/content/dam/content-fragments/spotlight",
   persistedQueryPath: process.env.AEM_PERSISTED_QUERY,
   useMock: process.env.USE_MOCK_AEM === "true",
   publishTier: process.env.AEM_PUBLISH_TIER === "true",
-  strictMode: process.env.AEM_STRICT_MODE === "true",
+  strictMode: process.env.AEM_STRICT_MODE === "true"
 });
 
 /**
@@ -105,11 +106,32 @@ export const getDynamicRenditionUrl = (
 ): string => {
   if (!baseUrl) return "";
 
+  // Server-side render handoffs may embed authenticated DAM binaries as data
+  // URLs. Do not reinterpret them as relative AEM paths.
+  if (baseUrl.startsWith("data:")) return baseUrl;
+
   // Handle Unsplash URLs (for mock/demo data)
   if (baseUrl.includes("unsplash.com")) {
     const quality = type === "web" ? 60 : type === "optimized" ? 80 : 100;
     const cleanUrl = baseUrl.split("?")[0];
     return `${cleanUrl}?auto=format&fit=crop&q=${quality}&w=${width}&h=${height}`;
+  }
+
+  // Adobe Dynamic Media delivery URLs use Image Serving modifiers rather than
+  // AEM Web-Optimized Image Delivery query names. Preserve any authored
+  // modifiers while adding only the rendition controls owned by this app.
+  if (baseUrl.includes("/is/image/") || baseUrl.includes("/is/content/")) {
+    try {
+      const url = new URL(baseUrl);
+      url.searchParams.set("wid", String(Math.round(width)));
+      url.searchParams.set("hei", String(Math.round(height)));
+      url.searchParams.set("qlt", type === "web" ? "70" : type === "optimized" ? "85" : "100");
+      url.searchParams.set("fit", "constrain");
+      if (type !== "original") url.searchParams.set("fmt", "webp");
+      return url.toString();
+    } catch {
+      return baseUrl;
+    }
   }
 
   // Handle relative DAM paths
@@ -148,18 +170,18 @@ export const getDynamicRenditionUrl = (
  */
 const GRAPHQL_QUERY = `
   query Spotlight($path: String!) {
-    contentFragmentByPath(_path: $path) {
+    spotlightVideoSceneByPath(_path: $path) {
       item {
         _path
         title
-        subtitle
+        eyebrow
+        subtitle { plaintext }
         cta
         brandColor
-        image {
-          _publishUrl
-          _authorUrl
-          _path
-        }
+        accentColor
+        metricLabel
+        metricValue
+        imageUrl
         durationSeconds
         animationStyle
         renditionType
@@ -167,25 +189,6 @@ const GRAPHQL_QUERY = `
         effectIntensity
         lottieUrl
         svgOverlayUrl
-        items {
-          _path
-          title
-          subtitle
-          cta
-          brandColor
-          image {
-            _publishUrl
-            _authorUrl
-            _path
-          }
-          durationSeconds
-          animationStyle
-          renditionType
-          effectType
-          effectIntensity
-          lottieUrl
-          svgOverlayUrl
-        }
       }
     }
   }
@@ -200,33 +203,41 @@ const PERSISTED_QUERY_PATH = "/graphql/execute.json";
  * Maps a raw AEM GraphQL item to a validated SpotlightScene.
  * Applies defaults and validates all fields via Zod schema.
  */
-const mapSingleItemToScene = (
-  item: AemGraphQLItem,
-  config?: AemConfig
-): SpotlightScene => {
+const mapSingleItemToScene = (item: AemGraphQLItem, config?: AemConfig): SpotlightScene => {
   const defaultScene = (mockData.scenes[0] ?? {}) as Partial<SpotlightScene>;
 
   // Resolve image URL from various AEM formats
-  const imageUrl = item.image?._publishUrl
-    ?? item.image?._authorUrl
-    ?? (item.image?._path ? resolveAssetUrl(item.image._path, config) : null)
-    ?? defaultScene.imageUrl
-    ?? "";
+  const imageUrl =
+    item.imageUrl ??
+    item.image?._publishUrl ??
+    item.image?._authorUrl ??
+    (item.image?._path ? resolveAssetUrl(item.image._path, config) : null) ??
+    defaultScene.imageUrl ??
+    "";
 
   // Build raw scene data
   const rawScene = {
     title: item.title ?? "Untitled",
-    subtitle: item.subtitle ?? "",
+    eyebrow: item.eyebrow ?? "AEM / LIVE",
+    subtitle:
+      typeof item.subtitle === "string"
+        ? item.subtitle
+        : (item.subtitle?.plaintext ?? item.subtitle?.html ?? ""),
     cta: item.cta ?? "Learn more",
     brandColor: item.brandColor ?? "#0E3B5A",
+    accentColor: item.accentColor ?? "#82ffca",
+    metricLabel: item.metricLabel ?? "SIGNAL",
+    metricValue:
+      item.metricValue ??
+      `${Math.round(Math.max(0, Math.min(1, Number(item.effectIntensity) || 0.5)) * 100)}%`,
     imageUrl: resolveAssetUrl(imageUrl, config),
     durationSeconds: Math.round(Number(item.durationSeconds) || defaultScene.durationSeconds || 4),
     animationStyle: (item.animationStyle as AnimationStyle) ?? "minimal",
     renditionType: (item.renditionType as RenditionType) ?? "optimized",
     effectType: (item.effectType as EffectType) ?? "none",
     effectIntensity: Math.max(0, Math.min(1, Number(item.effectIntensity) || 0.5)),
-    lottieUrl: resolveAssetUrl(item.lottieUrl, config),
-    svgOverlayUrl: resolveAssetUrl(item.svgOverlayUrl, config),
+    lottieUrl: resolveAssetUrl(item.lottieUrl ?? undefined, config),
+    svgOverlayUrl: resolveAssetUrl(item.svgOverlayUrl ?? undefined, config)
   };
 
   // Validate and apply defaults via Zod
@@ -244,10 +255,7 @@ const mapSingleItemToScene = (
  * Maps a raw AEM GraphQL response item to a validated AemSpotlight aggregate.
  * Handles both single-scene fragments and container fragments with nested items.
  */
-export const mapAemItemToSpotlight = (
-  item: AemGraphQLItem,
-  config?: AemConfig
-): AemSpotlight => {
+export const mapAemItemToSpotlight = (item: AemGraphQLItem, config?: AemConfig): AemSpotlight => {
   const id = item._path ?? "cf-unknown";
   const nestedItems = item.items ?? [];
 
@@ -255,7 +263,9 @@ export const mapAemItemToSpotlight = (
 
   if (nestedItems.length > 0) {
     // Container fragment with nested scene items
-    scenes = nestedItems.map((nestedItem: AemGraphQLItem) => mapSingleItemToScene(nestedItem, config));
+    scenes = nestedItems.map((nestedItem: AemGraphQLItem) =>
+      mapSingleItemToScene(nestedItem, config)
+    );
   } else {
     // Single scene fragment
     scenes = [mapSingleItemToScene(item, config)];
@@ -281,12 +291,18 @@ export const mapAemItemToSpotlight = (
  * @throws {AemFetchError} - If fetch fails and fallback is disabled
  * @throws {AemValidationError} - If response validation fails
  */
-export const fetchAemSpotlight = async (
-  config?: Partial<AemConfig>
-): Promise<AemSpotlight> => {
+export const fetchAemSpotlight = async (config?: Partial<AemConfig>): Promise<AemSpotlight> => {
   const resolvedConfig = { ...getAemConfig(), ...config };
 
-  const { baseUrl, token, graphqlEndpoint, contentFragmentPath, persistedQueryPath, strictMode, useMock } = resolvedConfig;
+  const {
+    baseUrl,
+    token,
+    graphqlEndpoint,
+    contentFragmentPath,
+    persistedQueryPath,
+    strictMode,
+    useMock
+  } = resolvedConfig;
 
   // Check cache first (unless using mock)
   const cacheKey = contentFragmentPath || "/content/dam/content-fragments/spotlight";
@@ -341,7 +357,7 @@ export const fetchAemSpotlight = async (
     endpoint = `${baseUrl}${graphqlEndpoint}`;
     body = JSON.stringify({
       query: GRAPHQL_QUERY,
-      variables: { path: contentFragmentPath },
+      variables: { path: contentFragmentPath }
     });
   }
 
@@ -349,13 +365,13 @@ export const fetchAemSpotlight = async (
     // Get token (supports both static and IMS auto-refresh)
     const accessToken = token || (await getAccessToken());
     const authHeader = accessToken
-      ? (accessToken.startsWith("Basic ") || accessToken.startsWith("Bearer "))
+      ? accessToken.startsWith("Basic ") || accessToken.startsWith("Bearer ")
         ? accessToken
         : `Bearer ${accessToken}`
       : null;
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     };
     if (authHeader) {
       headers["Authorization"] = authHeader;
@@ -366,7 +382,7 @@ export const fetchAemSpotlight = async (
       try {
         const csrfUrl = `${baseUrl}/libs/granite/csrf/token.json`;
         const csrfRes = await fetch(csrfUrl, {
-          headers: { Authorization: authHeader },
+          headers: { Authorization: authHeader }
         });
         if (csrfRes.ok) {
           const csrfData = await csrfRes.json();
@@ -382,7 +398,7 @@ export const fetchAemSpotlight = async (
     const res = await fetch(endpoint, {
       method,
       headers,
-      ...(body ? { body } : {}),
+      ...(body ? { body } : {})
     });
 
     if (!res.ok) {
@@ -423,12 +439,15 @@ export const fetchAemSpotlight = async (
     }
 
     const item =
+      response.data?.spotlightVideoSceneByPath?.item ??
       response.data?.contentFragmentByPath?.item ??
       response.data?.contentFragmentList?.items?.[0] ??
       response.data?.spotlightList?.items?.[0];
 
     if (!item) {
-      const error = new AemValidationError("No content fragment found in AEM response", ["Missing item"]);
+      const error = new AemValidationError("No content fragment found in AEM response", [
+        "Missing item"
+      ]);
       telemetryTracker.error(error.message);
       trackError("aem_content_error", error, { endpoint });
       throw error;
@@ -446,7 +465,10 @@ export const fetchAemSpotlight = async (
     fetchTimer.stop();
 
     if (strictMode) {
-      console.error("[AEM-STRICT] Failing render due to AEM error:", error instanceof Error ? error.message : String(error));
+      console.error(
+        "[AEM-STRICT] Failing render due to AEM error:",
+        error instanceof Error ? error.message : String(error)
+      );
       throw error;
     }
 
@@ -481,6 +503,6 @@ export const validateMockData = (): { valid: boolean; errors: string[] } => {
   }
   return {
     valid: false,
-    errors: result.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`),
+    errors: result.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`)
   };
 };

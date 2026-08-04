@@ -4,16 +4,22 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.2.0-orange)](./package.json)
 
-A production-ready showcase demonstrating how AEM Content Fragments orchestrate Remotion video compositions. This project follows BMAD/BEAD methodologies and enforces TDD guardrails for enterprise-grade video delivery.
+AEM-native video automation: author structured content once, preview it in the browser,
+and render on-brand video for every channel format. See the [documentation index](docs/README.md)
+for the PRD, architecture, specifications, decision log, and re-engineering guide.
 
 ## Features
 
 - **Multi-Channel Delivery**: 16:9, 9:16, 1:1, and 4K compositions from a single codebase
 - **AEM Integration**: GraphQL-powered content from AEM as a Cloud Service
+- **Dynamic Media Ready**: Uses Adobe Image Serving modifiers when authored assets are Dynamic Media URLs
+- **Renderer-neutral design system**: Campaign Motion tokens keep motion language independent from Remotion or VideoFlow
+- **Portable design contract**: `DESIGN.md` defines the visual direction, motion rules, components, and anti-patterns
 - **Animation Presets**: Cinematic, Energetic, and Minimal motion styles
 - **WASM Effects**: Custom pulse/glitch math in WebAssembly with identical JS fallback
 - **Type Safety**: Zod schema validation for all AEM data
 - **Error Resilience**: Graceful fallbacks and error boundaries throughout
+- **Render provenance**: Local render-job API records content hash, template, engine, formats, and lifecycle
 
 ## Demo
 
@@ -36,6 +42,9 @@ npm install
 # Start Remotion preview
 npm run start
 
+# Start the Player showcase with the local AEM proxy
+npm run dev:web
+
 # Run tests
 npm run test
 
@@ -45,6 +54,24 @@ npm run type-check
 # Render all formats
 npm run render:all
 ```
+
+### Optional local provenance database
+
+Start PostgreSQL 16 with Docker and apply the provenance schema:
+
+```bash
+docker compose up -d postgres
+docker compose ps
+```
+
+It listens only on `127.0.0.1:55432`. The local connection string is:
+
+```text
+postgresql://remotion:remotion_local_dev@127.0.0.1:55432/remotion_provenance
+```
+
+The full schema, reset/migration guidance, and production deployment requirements
+are documented in [db/README.md](db/README.md).
 
 ## Project Structure
 
@@ -58,6 +85,8 @@ remotion-aem-showcase/
 │   │   └── schema.ts              # Zod validation schemas
 │   ├── compositions/
 │   │   └── SpotlightComposition.tsx  # Main video component
+│   ├── templates/
+│   │   └── spotlightTemplate.ts      # Versioned template contract + validation
 │   ├── components/
 │   │   └── ErrorBoundary.tsx      # Error handling UI
 │   ├── errors/
@@ -72,6 +101,12 @@ remotion-aem-showcase/
 ├── public/
 │   └── spotlight_effects.wasm     # Static WASM asset
 ├── docs/
+│   ├── README.md                 # Documentation index and traceability convention
+│   ├── PRD.md                    # Product requirements
+│   ├── architecture.md           # System architecture and security boundaries
+│   ├── specifications.md         # Normative technical contracts
+│   ├── decision-log.md           # Product and architecture decisions
+│   ├── reengineering.md          # Rebuild/parity guide
 │   ├── bmad-spec.md              # BMAD phases & acceptance criteria
 │   ├── bead-tasks.md             # BEAD task tracking
 │   ├── domain-model.md           # DDD bounded contexts
@@ -90,7 +125,7 @@ Copy `.env.example` to `.env` and configure:
 # AEM Cloud Service
 AEM_BASE_URL=https://publish-p12345-e67890.adobeaemcloud.com
 AEM_TOKEN=<your-ims-bearer-token>
-AEM_GRAPHQL_ENDPOINT=/content/graphql/global/endpoint
+AEM_GRAPHQL_ENDPOINT=/content/_cq_graphql/global/endpoint.json
 AEM_CONTENT_FRAGMENT_PATH=/content/dam/your-project/spotlight
 
 # Optional: Use persisted query for CDN caching
@@ -110,6 +145,9 @@ USE_MOCK_AEM=true
 | `npm run test:coverage` | Generate coverage report |
 | `npm run render` | Render default composition |
 | `npm run render:all` | Render all aspect ratios |
+| `npm run render:live:aem` | Fetch live AEM content server-side and render 16:9 |
+| `npm run render:live:intelligence` | Render the live AEM campaign with the Campaign Intelligence opening |
+| `npm run render:live:aem:all` | Fetch one live AEM fragment and render 16:9, 9:16, 1:1, and 4K sequentially |
 | `npm run test:smoke` | Generate PNG stills for verification |
 | `npm run lint` | ESLint check |
 | `npm run lint:fix` | Auto-fix lint issues |
@@ -120,6 +158,23 @@ USE_MOCK_AEM=true
 | `npm run deploy:aem` | (Experimental) Render and upload to AEM |
 
 ## Production Deployment
+
+### Live Player Preview
+
+`npm run dev:web` exposes a same-origin `/api/aem` middleware for local Player
+preview. It keeps AEM credentials server-side, proxies GraphQL and DAM assets,
+and enables the **Live AEM · spotlight/live-showcase** source in the showcase.
+For production, deploy the equivalent authenticated backend route rather than
+exposing author credentials to the browser.
+
+### Dynamic Media boundary
+
+Dynamic Media remains the asset delivery and optimization layer. If a Content
+Fragment provides an Adobe Image Serving URL such as `/is/image/...`, the
+composition adds Dynamic Media modifiers (`wid`, `hei`, `qlt`, `fit`, and
+`fmt`) for the selected output format. Remotion owns the timeline, animation,
+brand system, and final video render; it does not duplicate Dynamic Media’s
+asset transformation or delivery responsibilities.
 
 ### 1. AEM Configuration
 The project includes reference configurations in `/aem-config`:
@@ -162,12 +217,20 @@ The spotlight expects content fragments with these fields:
 | `renditionType` | Enum | `web`, `optimized`, `original` |
 | `effectType` | Enum | `none`, `glow`, `glitch` |
 | `effectIntensity` | Number | 0.0 to 1.0 |
-| `lottieUrl` | Text | URL to Lottie JSON |
+| `lottieUrl` | Text | Reserved for a future Lottie renderer; native pulse is used today |
 | `svgOverlayUrl` | Text | URL to SVG overlay |
 
 For multi-scene videos, use a Container Fragment with nested scene fragments.
 
 ## Architecture
+
+### Rendering engines
+
+The AEM content contract and Campaign Motion tokens are renderer-neutral. Remotion
+is the active adapter today; VideoFlow is isolated as an Apache-2.0 adapter
+target so the campaign model, marketer workspace, and AEM integration do not
+need to change if the rendering engine changes. See
+`src/rendering/engines.ts` and `src/design-system/motion.ts`.
 
 ### Data Flow
 
@@ -272,6 +335,9 @@ See `/docs` for detailed methodology documentation.
 | [Monitoring & Observability](docs/monitoring-observability.md) | Telemetry, error tracking, alerting |
 | [TUTORIAL.md](TUTORIAL.md) | 10-minute quick start guide |
 | [EXAMPLES.md](EXAMPLES.md) | Enterprise use case examples |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, extension points, and PR expectations |
+| [SECURITY.md](SECURITY.md) | Security boundaries and vulnerability reporting |
+| [RELEASES.md](RELEASES.md) | Versioning and release checklist |
 
 ## License
 
@@ -279,7 +345,16 @@ Apache 2.0 — see [LICENSE](./LICENSE)
 
 ## Contributing
 
-1. Create feature branch from `main`
-2. Follow TDD workflow
-3. Ensure `npm run validate` passes
-4. Submit PR with BEAD task reference
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, extension workflows, traceability,
+verification, and pull-request expectations. Run `npm run validate` and
+`npm run check:docs` before submitting a change.
+
+Development follows the [spec-driven development workflow](docs/spec-driven-development.md):
+requirements and contracts are updated before implementation, and every behavior
+change carries tests or rendered/integration evidence.
+
+See the [production readiness assessment](docs/production-readiness.md) for the
+current quality, security, and deployment boundary.
+
+See the [evidence matrix](docs/evidence-matrix.md) for what is verified, partial,
+planned, or not yet proven.

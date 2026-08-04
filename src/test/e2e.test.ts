@@ -17,7 +17,7 @@ const E2E_OUTPUT_DIR = join(process.cwd(), "out", "e2e");
 const COMPOSITIONS = [
   { id: "AEMSpotlight-16x9", width: 1280, height: 720 },
   { id: "AEMSpotlight-9x16", width: 720, height: 1280 },
-  { id: "AEMSpotlight-1x1", width: 1080, height: 1080 },
+  { id: "AEMSpotlight-1x1", width: 1080, height: 1080 }
 ];
 
 // Short duration for E2E tests (2 seconds at 30fps = 60 frames)
@@ -45,7 +45,7 @@ describe("E2E Rendering Tests", () => {
           execSync(command, {
             encoding: "utf-8",
             env: { ...process.env, USE_MOCK_AEM: "true" },
-            timeout: 60000, // 60 second timeout
+            timeout: 60000 // 60 second timeout
           });
         } catch (error) {
           const err = error as { stderr?: string; stdout?: string };
@@ -80,9 +80,9 @@ describe("E2E Rendering Tests", () => {
               ...process.env,
               USE_MOCK_AEM: "true",
               TELEMETRY_ENABLED: "true",
-              TELEMETRY_BACKEND: "console",
+              TELEMETRY_BACKEND: "console"
             },
-            timeout: 180000, // 3 minute timeout
+            timeout: 180000 // 3 minute timeout
           });
         } catch (error) {
           const err = error as { stderr?: string; stdout?: string };
@@ -114,9 +114,9 @@ describe("E2E Rendering Tests", () => {
           env: {
             ...process.env,
             REMOTION_MOCK_FILE: "loyalty",
-            USE_MOCK_AEM: "true",
+            USE_MOCK_AEM: "true"
           },
-          timeout: 180000,
+          timeout: 180000
         });
       } catch (error) {
         const err = error as { stderr?: string; stdout?: string };
@@ -141,7 +141,7 @@ describe("E2E Rendering Tests", () => {
         execSync(command, {
           encoding: "utf-8",
           env: { ...process.env, USE_MOCK_AEM: "true" },
-          timeout: 60000,
+          timeout: 60000
         });
       } catch (error) {
         const err = error as { stderr?: string; stdout?: string };
@@ -160,7 +160,7 @@ describe("E2E Rendering Tests", () => {
       expect(() => {
         execSync(command, {
           encoding: "utf-8",
-          timeout: 30000,
+          timeout: 30000
         });
       }).toThrow();
     });

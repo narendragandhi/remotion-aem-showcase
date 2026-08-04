@@ -13,7 +13,7 @@
  *   AEM_TOKEN                  IMS bearer token
  *
  * Optional:
- *   AEM_GRAPHQL_ENDPOINT       default: /content/graphql/global/endpoint
+ *   AEM_GRAPHQL_ENDPOINT       default: /content/_cq_graphql/global/endpoint.json
  *   AEM_CONTENT_FRAGMENT_PATH  default: /content/dam/content-fragments/spotlight
  */
 
@@ -22,7 +22,7 @@ const jsonMode = process.argv.includes("--json");
 const {
   AEM_BASE_URL,
   AEM_TOKEN,
-  AEM_GRAPHQL_ENDPOINT = "/content/graphql/global/endpoint",
+  AEM_GRAPHQL_ENDPOINT = "/content/_cq_graphql/global/endpoint.json",
   AEM_CONTENT_FRAGMENT_PATH = "/content/dam/content-fragments/spotlight",
 } = process.env;
 
@@ -80,37 +80,59 @@ async function run() {
   // 3. GraphQL endpoint introspection
   if (!jsonMode) console.log("  Checking GraphQL endpoint…");
   const graphqlUrl = `${AEM_BASE_URL}${AEM_GRAPHQL_ENDPOINT}`;
-  try {
-    const authHeader = AEM_TOKEN
-      ? (AEM_TOKEN.startsWith("Basic ") || AEM_TOKEN.startsWith("Bearer "))
-        ? AEM_TOKEN
-        : `Bearer ${AEM_TOKEN}`
-      : null;
+  const authHeader = AEM_TOKEN
+    ? (AEM_TOKEN.startsWith("Basic ") || AEM_TOKEN.startsWith("Bearer "))
+      ? AEM_TOKEN
+      : `Bearer ${AEM_TOKEN}`
+    : null;
+  let graphqlAvailable = false;
 
-    const res = await fetch(graphqlUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(authHeader ? { Authorization: authHeader } : {}),
-      },
-      body: JSON.stringify({ query: "{ __typename }" }),
+  try {
+    // Validate the resource before POSTing. A typo can otherwise be handled by
+    // Sling's generic POST servlet, which may create content instead of running GraphQL.
+    const endpointProbe = await fetch(graphqlUrl, {
+      method: "GET",
+      headers: authHeader ? { Authorization: authHeader } : {},
+      redirect: "manual",
     });
 
-    if (res.ok) {
-      const json = await res.json();
-      if (json.data?.__typename) {
-        pass("GraphQL: endpoint reachable and authenticated", `${graphqlUrl}`);
-      } else if (json.errors) {
-        warn("GraphQL: endpoint reachable but returned errors", json.errors[0]?.message);
-      } else {
-        warn("GraphQL: unexpected response shape", JSON.stringify(json).slice(0, 80));
-      }
-    } else if (res.status === 401 || res.status === 403) {
-      fail("GraphQL: endpoint reachable and authenticated", `HTTP ${res.status} — check AEM_TOKEN`);
+    // AEM's GraphQL servlet normally returns 400 for a GET because it expects
+    // a POST body. That still proves the endpoint is present and authenticated.
+    if (endpointProbe.status === 401 || endpointProbe.status === 403 || endpointProbe.status === 404 || endpointProbe.status >= 500) {
+      fail("GraphQL: endpoint exists", `HTTP ${endpointProbe.status} at ${graphqlUrl}`);
     } else {
-      fail("GraphQL: endpoint reachable and authenticated", `HTTP ${res.status}`);
+      graphqlAvailable = true;
+    }
+
+    if (!graphqlAvailable) {
+      fail("GraphQL: endpoint reachable and authenticated", "Skipped because the configured endpoint is not available");
+    } else {
+      const res = await fetch(graphqlUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeader ? { Authorization: authHeader } : {}),
+        },
+        body: JSON.stringify({ query: "{ __typename }" }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.__typename) {
+          pass("GraphQL: endpoint reachable and authenticated", `${graphqlUrl}`);
+        } else if (json.errors) {
+          warn("GraphQL: endpoint reachable but returned errors", json.errors[0]?.message);
+        } else {
+          warn("GraphQL: unexpected response shape", JSON.stringify(json).slice(0, 80));
+        }
+      } else if (res.status === 401 || res.status === 403) {
+        fail("GraphQL: endpoint reachable and authenticated", `HTTP ${res.status} — check AEM_TOKEN`);
+      } else {
+        fail("GraphQL: endpoint reachable and authenticated", `HTTP ${res.status}`);
+      }
     }
   } catch (err) {
+    fail("GraphQL: endpoint exists", err.message);
     fail("GraphQL: endpoint reachable and authenticated", err.message);
   }
 
@@ -118,18 +140,17 @@ async function run() {
   if (!jsonMode) console.log("  Checking Content Fragment…");
   const cfQuery = `
     query {
-      contentFragmentByPath(_path: "${AEM_CONTENT_FRAGMENT_PATH}") {
+      spotlightVideoSceneByPath(_path: "${AEM_CONTENT_FRAGMENT_PATH}") {
         item { _path title }
       }
     }
   `;
   try {
-    const authHeader = AEM_TOKEN
-      ? (AEM_TOKEN.startsWith("Basic ") || AEM_TOKEN.startsWith("Bearer "))
-        ? AEM_TOKEN
-        : `Bearer ${AEM_TOKEN}`
-      : null;
-
+    if (!graphqlAvailable) {
+      fail("Content Fragment: found at configured path", "Skipped because GraphQL is unavailable");
+      finish();
+      return;
+    }
     const res = await fetch(graphqlUrl, {
       method: "POST",
       headers: {
@@ -141,7 +162,7 @@ async function run() {
 
     if (res.ok) {
       const json = await res.json();
-      const item = json.data?.contentFragmentByPath?.item;
+      const item = json.data?.spotlightVideoSceneByPath?.item ?? json.data?.contentFragmentByPath?.item;
       if (item) {
         pass("Content Fragment: found at configured path", `title="${item.title}", path=${item._path}`);
       } else if (json.errors) {

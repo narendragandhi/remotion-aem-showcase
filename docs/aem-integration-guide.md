@@ -71,7 +71,7 @@ USE_MOCK_AEM=false
 # .env for custom spotlight content
 AEM_BASE_URL=https://publish-p12345-e67890.adobeaemcloud.com
 AEM_TOKEN=your-ims-bearer-token
-AEM_GRAPHQL_ENDPOINT=/content/graphql/global/endpoint
+AEM_GRAPHQL_ENDPOINT=/content/_cq_graphql/global/endpoint.json
 AEM_CONTENT_FRAGMENT_PATH=/content/dam/spotlight/campaigns/summer-2024
 AEM_PERSISTED_QUERY=/spotlight/campaign-video
 USE_MOCK_AEM=false
@@ -84,7 +84,7 @@ AEM_PUBLISH_TIER=true
 # .env for local AEM SDK
 AEM_BASE_URL=http://localhost:4502
 AEM_TOKEN=admin:admin
-AEM_GRAPHQL_ENDPOINT=/content/graphql/global/endpoint
+AEM_GRAPHQL_ENDPOINT=/content/_cq_graphql/global/endpoint.json
 AEM_CONTENT_FRAGMENT_PATH=/content/dam/spotlight/demo
 USE_MOCK_AEM=false
 AEM_PUBLISH_TIER=false
@@ -120,7 +120,7 @@ Import the provided Content Fragment Model into your AEM instance:
 | renditionType | Enumeration | No | web/optimized/original |
 | effectType | Enumeration | No | none/glow/glitch |
 | effectIntensity | Number | No | 0.0 - 1.0 |
-| lottieUrl | Single-line text | No | Lottie animation URL |
+| lottieUrl | Single-line text | No | Reserved for future Lottie rendering; native pulse is used today |
 | svgOverlayUrl | Single-line text | No | SVG overlay URL |
 
 ### Step 2: Create Persisted Query (Recommended for Production)
@@ -185,7 +185,7 @@ Apply the CORS configuration for your Remotion rendering environment:
     "https://.*\\.vercel\\.app"
   ],
   "allowedpaths": [
-    "/content/graphql/.*",
+    "/content/_cq_graphql/spotlight/endpoint.json",
     "/content/dam/.*"
   ],
   "supportedheaders": [
@@ -205,7 +205,18 @@ Apply the CORS configuration for your Remotion rendering environment:
 
 ## Authentication Setup
 
-### IMS Service Account (Production)
+### IMS OAuth Server-to-Server (Production)
+
+For new Adobe Developer Console integrations, use OAuth Server-to-Server credentials.
+Set `AEM_IMS_CLIENT_ID`, `AEM_IMS_CLIENT_SECRET`, and `AEM_IMS_SCOPES` (comma-separated)
+in the environment. The token manager exchanges these credentials at
+`/ims/token/v3` and refreshes tokens automatically.
+
+Service Account (JWT) credentials are retained only as a legacy compatibility path
+for existing AEM Developer Console integrations. Adobe has deprecated creating new
+JWT credentials, so do not use the legacy setup for new deployments.
+
+#### Legacy JWT setup
 
 For production deployments, use an Adobe IMS Service Account:
 
@@ -280,7 +291,7 @@ Test your AEM connection before rendering:
 ```bash
 # Quick connection test
 curl -H "Authorization: Bearer $AEM_TOKEN" \
-  "$AEM_BASE_URL/content/graphql/global/endpoint?query={__schema{types{name}}}"
+  "$AEM_BASE_URL/content/_cq_graphql/spotlight/endpoint.json"
 ```
 
 ---

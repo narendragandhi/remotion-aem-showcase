@@ -33,3 +33,6 @@ coverage/
 # Remotion cache
 .remotion/
 .vercel
+.local/
+.playwright-cli/
+.env.postgres

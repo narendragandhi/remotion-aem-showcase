@@ -1,0 +1,41 @@
+{
+  "id": "/content/dam/northstar/commerce/summer-reset",
+  "scenes": [
+    {
+      "title": "The summer reset",
+      "eyebrow": "NORTHSTAR / LIMITED DROP",
+      "subtitle": "Three essentials. One lighter way forward.",
+      "cta": "Shop the edit",
+      "brandColor": "#3A2018",
+      "accentColor": "#FFB84D",
+      "metricLabel": "THE EDIT",
+      "metricValue": "03 ITEMS",
+      "imageUrl": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "energetic",
+      "renditionType": "optimized",
+      "effectType": "glitch",
+      "effectIntensity": 0.2,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Free delivery through Sunday",
+      "eyebrow": "ONLINE EXCLUSIVE",
+      "subtitle": "A little easier to choose well.",
+      "cta": "Get free delivery",
+      "brandColor": "#17382D",
+      "accentColor": "#82FFCA",
+      "metricLabel": "ENDS",
+      "metricValue": "SUNDAY",
+      "imageUrl": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "minimal",
+      "renditionType": "web",
+      "effectType": "none",
+      "effectIntensity": 0,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    }
+  ]
+}

@@ -80,7 +80,7 @@ let config: TelemetryConfig = {
   webhookUrl: process.env.TELEMETRY_WEBHOOK_URL,
   adobeAnalyticsRsid: process.env.ADOBE_ANALYTICS_RSID,
   sampleRate: parseFloat(process.env.TELEMETRY_SAMPLE_RATE || "1"),
-  includeStackTraces: process.env.TELEMETRY_INCLUDE_STACKS !== "false",
+  includeStackTraces: process.env.TELEMETRY_INCLUDE_STACKS !== "false"
 };
 
 // Event buffer for batching
@@ -128,7 +128,7 @@ const sendEvent = async (event: TelemetryEvent): Promise<void> => {
           await fetch(config.webhookUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(event),
+            body: JSON.stringify(event)
           });
         } catch (error) {
           console.warn("[Telemetry] Webhook delivery failed:", error);
@@ -161,7 +161,7 @@ const buildAdobeAnalyticsPayload = (
     timestamp: Math.floor(Date.now() / 1000),
     userAgent: "remotion-aem-showcase/0.2.0",
     pageName: "remotion-render",
-    channel: "video-render",
+    channel: "video-render"
   };
 
   switch (event.type) {
@@ -177,7 +177,7 @@ const buildAdobeAnalyticsPayload = (
         prop1: String(d.sceneCount),
         prop2: d.effectsUsed.join(","),
         prop3: d.wasmEnabled ? "wasm" : "js-fallback",
-        ...(d.renderTimeMs ? { eVar4: String(Math.round(d.renderTimeMs)) } : {}),
+        ...(d.renderTimeMs ? { eVar4: String(Math.round(d.renderTimeMs)) } : {})
       };
     }
     case "aem_fetch": {
@@ -188,7 +188,7 @@ const buildAdobeAnalyticsPayload = (
         events: d.status === "success" ? "event3" : d.status === "fallback" ? "event4" : "event5",
         eVar5: d.status,
         eVar6: d.usedMock ? "mock" : "live",
-        prop4: String(d.latencyMs ?? 0),
+        prop4: String(d.latencyMs ?? 0)
       };
     }
     case "error": {
@@ -199,7 +199,7 @@ const buildAdobeAnalyticsPayload = (
         events: "event6",
         eVar7: d.errorType,
         eVar8: d.recoverable ? "recoverable" : "fatal",
-        prop5: d.errorMessage.slice(0, 100),
+        prop5: d.errorMessage.slice(0, 100)
       };
     }
     case "performance": {
@@ -210,7 +210,7 @@ const buildAdobeAnalyticsPayload = (
         events: "event7",
         eVar9: d.metric,
         prop6: String(d.value),
-        prop7: d.unit,
+        prop7: d.unit
       };
     }
   }
@@ -239,7 +239,7 @@ const sendToAdobeAnalytics = async (
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
     if (!res.ok) {
       console.warn(`[Telemetry] Adobe Analytics returned ${res.status}`);
@@ -281,11 +281,13 @@ const flushEvents = async (): Promise<void> => {
 /**
  * Track render start
  */
-export const trackRenderStart = (metrics: Omit<RenderMetrics, "status" | "startTime">): RenderMetrics => {
+export const trackRenderStart = (
+  metrics: Omit<RenderMetrics, "status" | "startTime">
+): RenderMetrics => {
   const fullMetrics: RenderMetrics = {
     ...metrics,
     startTime: Date.now(),
-    status: "started",
+    status: "started"
   };
 
   bufferEvent({ type: "render", data: fullMetrics });
@@ -301,7 +303,7 @@ export const trackRenderComplete = (metrics: RenderMetrics): void => {
     ...metrics,
     endTime,
     renderTimeMs: endTime - metrics.startTime,
-    status: "completed",
+    status: "completed"
   };
 
   bufferEvent({ type: "render", data: updatedMetrics });
@@ -318,7 +320,7 @@ export const trackRenderError = (metrics: RenderMetrics, error: Error): void => 
     renderTimeMs: endTime - metrics.startTime,
     status: "failed",
     errorMessage: error.message,
-    errorStack: config.includeStackTraces ? error.stack : undefined,
+    errorStack: config.includeStackTraces ? error.stack : undefined
   };
 
   bufferEvent({ type: "render", data: updatedMetrics });
@@ -344,7 +346,7 @@ export const trackAemFetch = (
         latencyMs: Date.now() - startTime,
         status: usedMock ? "fallback" : "success",
         usedMock,
-        sceneCount,
+        sceneCount
       };
       bufferEvent({ type: "aem_fetch", data: metrics });
     },
@@ -357,10 +359,10 @@ export const trackAemFetch = (
         latencyMs: Date.now() - startTime,
         status: "error",
         usedMock,
-        errorMessage: message,
+        errorMessage: message
       };
       bufferEvent({ type: "aem_fetch", data: metrics });
-    },
+    }
   };
 };
 
@@ -381,7 +383,7 @@ export const trackError = (
     context,
     timestamp: Date.now(),
     recoverable,
-    recovered,
+    recovered
   };
 
   bufferEvent({ type: "error", data: event });
@@ -401,7 +403,7 @@ export const trackPerformance = (
     value,
     unit,
     context,
-    timestamp: Date.now(),
+    timestamp: Date.now()
   };
 
   bufferEvent({ type: "performance", data: event });
@@ -421,7 +423,7 @@ export const createTimer = (
       const duration = performance.now() - startTime;
       trackPerformance(metricName, duration, "ms", context);
       return duration;
-    },
+    }
   };
 };
 
@@ -442,5 +444,5 @@ export const getTelemetryStatus = (): {
 } => ({
   enabled: config.enabled,
   backend: config.backend,
-  bufferedEvents: eventBuffer.length,
+  bufferedEvents: eventBuffer.length
 });

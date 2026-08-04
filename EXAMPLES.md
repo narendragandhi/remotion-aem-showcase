@@ -1,6 +1,58 @@
 # AEM Remotion Showcase: Use Case Examples
 
-This repository demonstrates four enterprise-grade use cases for automated, data-driven video production. Each example uses specialized mock data to simulate real-world AEM Content Fragment delivery.
+This repository demonstrates a fictitious product brand, **Northstar Goods**, across
+launch, commerce, loyalty, localization, and seasonal campaigns. Each example is
+structured like an AEM Content Fragment delivery and uses the same governed motion
+system, so contributors can compare how one brand scales across content scenarios.
+
+Northstar Goods makes thoughtful everyday objects: lighting, carry goods, and small
+ritual products. The examples are intentionally fictional and use stock image URLs
+only as visual placeholders.
+
+### Northstar brand system
+
+- **Voice:** quiet confidence, useful detail, no hype.
+- **Palette:** midnight navy, forest, mint signal, amber attention, violet craft.
+- **Motion:** cinematic for product meaning, energetic for launches/offers, minimal
+  for proof and conversion.
+- **Content fields:** each scene exercises eyebrow, title, subtitle, CTA, metrics,
+  brand/accent colors, image, duration, animation, and effect configuration.
+
+---
+
+## Northstar product examples
+
+### 1. Luma One product launch
+**Scenario:** A hero launch for Northstar’s adaptive desk light.
+- **Mock data:** `src/mock/examples/northstar_luma_one_launch.json`
+- **Exercises:** three-scene product narrative, feature metrics, launch CTA,
+  cinematic-to-minimal motion progression.
+
+### 2. Field Kit product story
+**Scenario:** A durable weekend carry system positioned through use and detail.
+- **Mock data:** `src/mock/examples/northstar_field_kit.json`
+- **Exercises:** product bundle, outdoor imagery, warranty proof, mixed pacing.
+
+### 3. Member year-in-review
+**Scenario:** A personalized Northstar member recap that turns usage data into a
+  warm retention moment.
+- **Mock data:** `src/mock/examples/northstar_members_year.json`
+- **Exercises:** personalized metrics, loyalty CTA, customer-specific content.
+
+### 4. Localized France launch
+**Scenario:** The Luma One launch localized for France while preserving the same
+  template and brand motion system.
+- **Mock data:** `src/mock/examples/northstar_fr_launch.json`
+- **Exercises:** localized copy, accents, longer text, regional campaign path.
+
+### 5. Seasonal retail offer
+**Scenario:** A short commerce campaign for a time-bound summer collection offer.
+- **Mock data:** `src/mock/examples/northstar_retail_offer.json`
+- **Exercises:** urgency, limited drop messaging, conversion CTA, restrained glitch.
+
+---
+
+## Generic integration examples
 
 ---
 

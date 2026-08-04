@@ -1,0 +1,59 @@
+{
+  "id": "/content/dam/northstar/members/2026/sonam",
+  "scenes": [
+    {
+      "title": "Your Northstar year",
+      "eyebrow": "MEMBER / 2026",
+      "subtitle": "A year of small rituals and wide-open days.",
+      "cta": "See your year",
+      "brandColor": "#102C42",
+      "accentColor": "#82FFCA",
+      "metricLabel": "DAYS OUTSIDE",
+      "metricValue": "42",
+      "imageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "cinematic",
+      "renditionType": "optimized",
+      "effectType": "glow",
+      "effectIntensity": 0.55,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Three pieces became daily favorites",
+      "eyebrow": "YOUR MOST USED",
+      "subtitle": "The objects that kept pace with you.",
+      "cta": "View your favorites",
+      "brandColor": "#3B244C",
+      "accentColor": "#C8A8FF",
+      "metricLabel": "FAVORITE ITEM",
+      "metricValue": "FIELD MUG",
+      "imageUrl": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "energetic",
+      "renditionType": "web",
+      "effectType": "none",
+      "effectIntensity": 0,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Keep looking north",
+      "eyebrow": "MEMBER PERK",
+      "subtitle": "Your next chapter starts with 20% off.",
+      "cta": "Shop your perk",
+      "brandColor": "#153D4B",
+      "accentColor": "#FFB84D",
+      "metricLabel": "MEMBER SAVING",
+      "metricValue": "20%",
+      "imageUrl": "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "minimal",
+      "renditionType": "optimized",
+      "effectType": "glow",
+      "effectIntensity": 0.45,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    }
+  ]
+}

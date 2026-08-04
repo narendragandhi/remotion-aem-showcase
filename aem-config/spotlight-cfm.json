@@ -12,6 +12,11 @@
           "valueType": "string",
           "required": "true"
         },
+        "eyebrow": {
+          "fieldLabel": "Editorial Eyebrow",
+          "valueType": "string",
+          "default": "AEM / LIVE"
+        },
         "subtitle": {
           "jcr:primaryType": "nt:unstructured",
           "fieldLabel": "Subtitle",
@@ -29,6 +34,22 @@
           "valueType": "string",
           "default": "#0E3B5A",
           "validation": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "accentColor": {
+          "fieldLabel": "Motion Accent Color",
+          "valueType": "string",
+          "default": "#82ffca",
+          "validation": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "metricLabel": {
+          "fieldLabel": "Metric Label",
+          "valueType": "string",
+          "default": "SIGNAL"
+        },
+        "metricValue": {
+          "fieldLabel": "Metric Value",
+          "valueType": "string",
+          "default": "100%"
         },
         "image": {
           "jcr:primaryType": "nt:unstructured",

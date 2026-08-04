@@ -9,8 +9,7 @@
  * Reduces network requests and improves render performance.
  */
 
-import { createHash } from "crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, readdirSync } from "fs";
 import { join } from "path";
 import { trackPerformance } from "../telemetry";
 
@@ -29,13 +28,15 @@ export interface CacheEntry<T> {
   size?: number;
 }
 
+type CachedAsset = { kind: "binary"; data: string } | { kind: "text"; data: string };
+
 // Default configuration
 const DEFAULT_CONFIG: CacheConfig = {
   enabled: process.env.CACHE_ENABLED !== "false",
   memoryMaxSize: parseInt(process.env.CACHE_MEMORY_MAX_SIZE || "100", 10),
   diskCacheDir: process.env.CACHE_DISK_DIR || ".cache/remotion",
   ttlMs: parseInt(process.env.CACHE_TTL_MS || String(30 * 60 * 1000), 10), // 30 minutes
-  persistToDisk: process.env.CACHE_PERSIST_DISK === "true",
+  persistToDisk: process.env.CACHE_PERSIST_DISK === "true"
 };
 
 let config: CacheConfig = { ...DEFAULT_CONFIG };
@@ -61,7 +62,21 @@ export const configureCache = (newConfig: Partial<CacheConfig>): void => {
  * Generate cache key from URL or identifier
  */
 export const generateCacheKey = (identifier: string, namespace = "default"): string => {
-  const hash = createHash("sha256").update(identifier).digest("hex").slice(0, 16);
+  // Cache keys do not require cryptographic guarantees. Keep this algorithm
+  // runtime-neutral so the cache module can be reached from Remotion's bundle
+  // without pulling Node's crypto implementation into the browser context.
+  let hashA = 0x811c9dc5;
+  let hashB = 0x9e3779b9;
+  for (let index = 0; index < identifier.length; index += 1) {
+    const code = identifier.charCodeAt(index);
+    hashA ^= code;
+    hashA = Math.imul(hashA, 0x01000193);
+    hashB ^= code + index;
+    hashB = Math.imul(hashB, 0x85ebca6b);
+  }
+  const hash = `${(hashA >>> 0).toString(16).padStart(8, "0")}${(hashB >>> 0)
+    .toString(16)
+    .padStart(8, "0")}`;
   return `${namespace}:${hash}`;
 };
 
@@ -146,11 +161,7 @@ export const getCached = <T>(key: string): T | null => {
 /**
  * Set item in cache
  */
-export const setCached = <T>(
-  key: string,
-  data: T,
-  ttlMs: number = config.ttlMs
-): void => {
+export const setCached = <T>(key: string, data: T, ttlMs: number = config.ttlMs): void => {
   if (!config.enabled) return;
 
   evictIfNeeded();
@@ -159,7 +170,7 @@ export const setCached = <T>(
     data,
     timestamp: Date.now(),
     ttl: ttlMs,
-    size: JSON.stringify(data).length,
+    size: JSON.stringify(data).length
   };
 
   memoryCache.set(key, entry);
@@ -206,6 +217,17 @@ export const invalidateCached = (key: string): void => {
 export const clearCache = (): void => {
   memoryCache.clear();
   accessOrder.length = 0;
+  if (config.persistToDisk && existsSync(config.diskCacheDir)) {
+    try {
+      for (const file of readdirSync(config.diskCacheDir)) {
+        if (file.endsWith(".json")) {
+          unlinkSync(join(config.diskCacheDir, file));
+        }
+      }
+    } catch {
+      // Ignore disk cleanup errors; memory cache is still cleared.
+    }
+  }
   trackPerformance("cache_clear", 1, "count", {});
 };
 
@@ -231,7 +253,7 @@ export const getCacheStats = (): {
     memoryMaxSize: config.memoryMaxSize,
     totalSize,
     oldestEntry: accessOrder[0] || null,
-    newestEntry: accessOrder[accessOrder.length - 1] || null,
+    newestEntry: accessOrder[accessOrder.length - 1] || null
   };
 };
 
@@ -262,11 +284,7 @@ export const cachedFetch = async <T>(
 /**
  * Cache AEM GraphQL response
  */
-export const cacheAemResponse = <T>(
-  fragmentPath: string,
-  data: T,
-  ttlMs?: number
-): void => {
+export const cacheAemResponse = <T>(fragmentPath: string, data: T, ttlMs?: number): void => {
   const key = generateCacheKey(fragmentPath, "aem");
   setCached(key, data, ttlMs);
 };
@@ -284,10 +302,10 @@ export const getCachedAemResponse = <T>(fragmentPath: string): T | null => {
  */
 export const cacheAsset = (url: string, data: ArrayBuffer | string): void => {
   const key = generateCacheKey(url, "asset");
-  // For binary data, store as base64
-  const storable = data instanceof ArrayBuffer
-    ? Buffer.from(data).toString("base64")
-    : data;
+  const storable: CachedAsset =
+    data instanceof ArrayBuffer
+      ? { kind: "binary", data: Buffer.from(data).toString("base64") }
+      : { kind: "text", data };
   setCached(key, storable);
 };
 
@@ -296,15 +314,17 @@ export const cacheAsset = (url: string, data: ArrayBuffer | string): void => {
  */
 export const getCachedAsset = (url: string): ArrayBuffer | string | null => {
   const key = generateCacheKey(url, "asset");
-  const cached = getCached<string>(key);
+  const cached = getCached<CachedAsset | string>(key);
   if (cached === null) return null;
 
-  // Try to decode as base64 for binary data
+  // Older cache entries stored strings directly; preserve those as text.
+  if (typeof cached === "string") return cached;
+  if (cached.kind === "text") return cached.data;
   try {
-    const buffer = Buffer.from(cached, "base64");
+    const buffer = Buffer.from(cached.data, "base64");
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
   } catch {
-    return cached;
+    return null;
   }
 };
 

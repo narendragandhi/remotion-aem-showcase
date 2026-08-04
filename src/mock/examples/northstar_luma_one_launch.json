@@ -1,0 +1,59 @@
+{
+  "id": "/content/dam/northstar/campaigns/luma-one-launch",
+  "scenes": [
+    {
+      "title": "Meet Luma One",
+      "eyebrow": "NORTHSTAR / NEW",
+      "subtitle": "A smarter glow for focused spaces.",
+      "cta": "Discover Luma One",
+      "brandColor": "#101827",
+      "accentColor": "#82FFCA",
+      "metricLabel": "LIGHT MODES",
+      "metricValue": "12",
+      "imageUrl": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "cinematic",
+      "renditionType": "optimized",
+      "effectType": "glow",
+      "effectIntensity": 0.75,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Light that follows your rhythm",
+      "eyebrow": "DESIGNED TO ADAPT",
+      "subtitle": "Warm mornings. Deep work. Slow evenings.",
+      "cta": "See the modes",
+      "brandColor": "#17324A",
+      "accentColor": "#FFB84D",
+      "metricLabel": "COLOR RANGE",
+      "metricValue": "2700–6500K",
+      "imageUrl": "https://images.unsplash.com/photo-1534073828943-f801091bb18c?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "energetic",
+      "renditionType": "optimized",
+      "effectType": "glow",
+      "effectIntensity": 0.6,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Make space for better work",
+      "eyebrow": "NORTHSTAR / LUMA ONE",
+      "subtitle": "Thoughtful light, beautifully made.",
+      "cta": "Shop the launch",
+      "brandColor": "#241A39",
+      "accentColor": "#C8A8FF",
+      "metricLabel": "READY TO SHIP",
+      "metricValue": "TODAY",
+      "imageUrl": "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "minimal",
+      "renditionType": "web",
+      "effectType": "none",
+      "effectIntensity": 0,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    }
+  ]
+}

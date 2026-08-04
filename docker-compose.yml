@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: remotion-aem-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: remotion_provenance
+      POSTGRES_USER: remotion
+      POSTGRES_PASSWORD: remotion_local_dev
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - remotion-aem-postgres-data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U remotion -d remotion_provenance"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  remotion-aem-postgres-data:

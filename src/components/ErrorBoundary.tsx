@@ -17,10 +17,7 @@ interface ErrorBoundaryState {
  * Error Boundary component for catching and displaying errors gracefully.
  * Renders a styled fallback UI instead of crashing the entire composition.
  */
-export class SpotlightErrorBoundary extends Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
+export class SpotlightErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -78,13 +75,13 @@ export const ErrorFallbackUI: React.FC<ErrorFallbackUIProps> = ({ error }) => {
         justifyContent: "center",
         padding: "2rem",
         fontFamily: "system-ui, -apple-system, sans-serif",
-        color: "#ffffff",
+        color: "#ffffff"
       }}
     >
       <div
         style={{
           fontSize: "4rem",
-          marginBottom: "1rem",
+          marginBottom: "1rem"
         }}
       >
         {isRecoverable ? "⚠️" : "❌"}
@@ -93,7 +90,7 @@ export const ErrorFallbackUI: React.FC<ErrorFallbackUIProps> = ({ error }) => {
         style={{
           fontSize: "2rem",
           margin: "0 0 0.5rem 0",
-          fontWeight: 600,
+          fontWeight: 600
         }}
       >
         {isRecoverable ? "Content Temporarily Unavailable" : "Rendering Error"}
@@ -104,7 +101,7 @@ export const ErrorFallbackUI: React.FC<ErrorFallbackUIProps> = ({ error }) => {
           opacity: 0.8,
           margin: "0 0 1rem 0",
           maxWidth: "40rem",
-          textAlign: "center",
+          textAlign: "center"
         }}
       >
         {getErrorMessage(error)}
@@ -115,7 +112,7 @@ export const ErrorFallbackUI: React.FC<ErrorFallbackUIProps> = ({ error }) => {
           backgroundColor: "rgba(255, 255, 255, 0.1)",
           borderRadius: "0.25rem",
           fontSize: "0.875rem",
-          fontFamily: "monospace",
+          fontFamily: "monospace"
         }}
       >
         Error Code: {errorCode}
@@ -127,9 +124,7 @@ export const ErrorFallbackUI: React.FC<ErrorFallbackUIProps> = ({ error }) => {
 /**
  * Loading state component for async operations.
  */
-export const LoadingFallback: React.FC<{ message?: string }> = ({
-  message = "Loading...",
-}) => {
+export const LoadingFallback: React.FC<{ message?: string }> = ({ message = "Loading..." }) => {
   const frame = useCurrentFrame();
   // One full rotation every 30 frames (1 second at 30fps)
   const rotation = interpolate(frame % 30, [0, 30], [0, 360]);
@@ -143,7 +138,7 @@ export const LoadingFallback: React.FC<{ message?: string }> = ({
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "system-ui, -apple-system, sans-serif",
-        color: "#ffffff",
+        color: "#ffffff"
       }}
     >
       <div
@@ -154,7 +149,7 @@ export const LoadingFallback: React.FC<{ message?: string }> = ({
           borderTopColor: "#ffffff",
           borderRadius: "50%",
           marginBottom: "1rem",
-          transform: `rotate(${rotation}deg)`,
+          transform: `rotate(${rotation}deg)`
         }}
       />
       <p style={{ fontSize: "1.25rem", opacity: 0.9 }}>{message}</p>
@@ -173,7 +168,7 @@ export const AssetErrorPlaceholder: React.FC<{
   const icons = {
     image: "🖼️",
     lottie: "🎬",
-    svg: "📐",
+    svg: "📐"
   };
 
   return (
@@ -187,7 +182,7 @@ export const AssetErrorPlaceholder: React.FC<{
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "0.5rem",
-        border: "2px dashed rgba(255, 255, 255, 0.3)",
+        border: "2px dashed rgba(255, 255, 255, 0.3)"
       }}
     >
       <span style={{ fontSize: "2rem" }}>{icons[assetType]}</span>
@@ -196,7 +191,7 @@ export const AssetErrorPlaceholder: React.FC<{
           fontSize: "0.75rem",
           opacity: 0.6,
           marginTop: "0.5rem",
-          textTransform: "uppercase",
+          textTransform: "uppercase"
         }}
       >
         {assetType} unavailable

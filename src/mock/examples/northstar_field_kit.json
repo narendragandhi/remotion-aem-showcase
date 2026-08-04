@@ -1,0 +1,41 @@
+{
+  "id": "/content/dam/northstar/campaigns/field-kit",
+  "scenes": [
+    {
+      "title": "The Field Kit",
+      "eyebrow": "NORTHSTAR / WEEKEND",
+      "subtitle": "Everything you need to leave well.",
+      "cta": "Explore the kit",
+      "brandColor": "#17382D",
+      "accentColor": "#82FFCA",
+      "metricLabel": "PIECES",
+      "metricValue": "05",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 4,
+      "animationStyle": "energetic",
+      "renditionType": "optimized",
+      "effectType": "none",
+      "effectIntensity": 0,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "Built for the in-between",
+      "eyebrow": "PACK LIGHT / GO FAR",
+      "subtitle": "Durable materials. Quiet details. No excess.",
+      "cta": "View the details",
+      "brandColor": "#253A42",
+      "accentColor": "#FFB84D",
+      "metricLabel": "WARRANTY",
+      "metricValue": "5 YEARS",
+      "imageUrl": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 5,
+      "animationStyle": "cinematic",
+      "renditionType": "optimized",
+      "effectType": "glow",
+      "effectIntensity": 0.35,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    }
+  ]
+}

@@ -44,7 +44,7 @@ export const checkAemHealth = async (): Promise<ComponentHealth> => {
         status: "up",
         latencyMs: Date.now() - startTime,
         message: "Using mock data (AEM not configured)",
-        lastChecked: new Date().toISOString(),
+        lastChecked: new Date().toISOString()
       };
     }
 
@@ -58,7 +58,7 @@ export const checkAemHealth = async (): Promise<ComponentHealth> => {
       status: "up",
       latencyMs: latency,
       message: `Connected to ${config.baseUrl}`,
-      lastChecked: new Date().toISOString(),
+      lastChecked: new Date().toISOString()
     };
   } catch (error) {
     const latency = Date.now() - startTime;
@@ -71,7 +71,7 @@ export const checkAemHealth = async (): Promise<ComponentHealth> => {
       status: config.strictMode ? "down" : "degraded",
       latencyMs: latency,
       message: `AEM error: ${message}`,
-      lastChecked: new Date().toISOString(),
+      lastChecked: new Date().toISOString()
     };
   }
 };
@@ -93,14 +93,14 @@ export const checkWasmHealth = async (): Promise<ComponentHealth> => {
     const message = available
       ? "WASM loaded successfully"
       : wasmError
-      ? `WASM unavailable, using JS fallback: ${wasmError.message}`
-      : "WASM unavailable, using JS fallback";
+        ? `WASM unavailable, using JS fallback: ${wasmError.message}`
+        : "WASM unavailable, using JS fallback";
 
     return {
       status: available ? "up" : "degraded",
       latencyMs: latency,
       message,
-      lastChecked: new Date().toISOString(),
+      lastChecked: new Date().toISOString()
     };
   } catch (error) {
     const latency = Date.now() - startTime;
@@ -110,7 +110,7 @@ export const checkWasmHealth = async (): Promise<ComponentHealth> => {
       status: "degraded", // WASM is optional, JS fallback exists
       latencyMs: latency,
       message: `WASM error (using JS fallback): ${message}`,
-      lastChecked: new Date().toISOString(),
+      lastChecked: new Date().toISOString()
     };
   }
 };
@@ -126,7 +126,7 @@ export const checkTelemetryHealth = (): ComponentHealth => {
     message: status.enabled
       ? `Telemetry enabled (${status.backend}), ${status.bufferedEvents} events buffered`
       : "Telemetry disabled",
-    lastChecked: new Date().toISOString(),
+    lastChecked: new Date().toISOString()
   };
 };
 
@@ -146,13 +146,13 @@ export const checkSystemHealth = (): ComponentHealth => {
     return {
       status,
       message: `Heap: ${heapUsedMB}MB / ${heapTotalMB}MB (${heapPercentage}%)`,
-      lastChecked: new Date().toISOString(),
+      lastChecked: new Date().toISOString()
     };
   } catch {
     return {
       status: "up",
       message: "System metrics unavailable",
-      lastChecked: new Date().toISOString(),
+      lastChecked: new Date().toISOString()
     };
   }
 };
@@ -186,8 +186,8 @@ export const runHealthChecks = async (): Promise<HealthStatus> => {
     details: {
       nodeVersion: process.version,
       platform: process.platform,
-      uptime: process.uptime(),
-    },
+      uptime: process.uptime()
+    }
   };
 };
 
@@ -196,7 +196,7 @@ export const runHealthChecks = async (): Promise<HealthStatus> => {
  */
 export const livenessCheck = (): { alive: boolean; timestamp: string } => ({
   alive: true,
-  timestamp: new Date().toISOString(),
+  timestamp: new Date().toISOString()
 });
 
 /**
@@ -216,13 +216,13 @@ export const readinessCheck = async (): Promise<{
     return {
       ready,
       timestamp: new Date().toISOString(),
-      reason: ready ? undefined : aemHealth.message,
+      reason: ready ? undefined : aemHealth.message
     };
   } catch (error) {
     return {
       ready: false,
       timestamp: new Date().toISOString(),
-      reason: error instanceof Error ? error.message : "Unknown error",
+      reason: error instanceof Error ? error.message : "Unknown error"
     };
   }
 };
@@ -236,7 +236,7 @@ export const formatHealthStatus = (status: HealthStatus): string => {
     `Version: ${status.version}`,
     `Timestamp: ${status.timestamp}`,
     "",
-    "Component Checks:",
+    "Component Checks:"
   ];
 
   for (const [name, check] of Object.entries(status.checks)) {

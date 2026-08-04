@@ -5,7 +5,7 @@ import {
   isWasmAvailable,
   warmupSpotlightWasm,
   calculatePulse,
-  calculateGlitch,
+  calculateGlitch
 } from "./spotlightEffects";
 import fs from "fs";
 import path from "path";
@@ -43,9 +43,7 @@ describe("spotlightEffects", () => {
       });
 
       it("varies with progress", () => {
-        const results = [0.1, 0.3, 0.5, 0.7, 0.9].map((p) =>
-          spotlightMath.calculateGlitch(p, 0.5)
-        );
+        const results = [0.1, 0.3, 0.5, 0.7, 0.9].map((p) => spotlightMath.calculateGlitch(p, 0.5));
         const unique = new Set(results);
         expect(unique.size).toBeGreaterThan(1);
       });
@@ -67,10 +65,11 @@ describe("spotlightEffects", () => {
       const mockFetch = vi.mocked(global.fetch);
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        arrayBuffer: async () => wasmBuffer.buffer.slice(
-          wasmBuffer.byteOffset,
-          wasmBuffer.byteOffset + wasmBuffer.byteLength
-        ),
+        arrayBuffer: async () =>
+          wasmBuffer.buffer.slice(
+            wasmBuffer.byteOffset,
+            wasmBuffer.byteOffset + wasmBuffer.byteLength
+          )
       } as unknown as Response);
 
       await warmupSpotlightWasm();
@@ -82,7 +81,7 @@ describe("spotlightEffects", () => {
         { p: 0.25, amp: 0.8, intensity: 0.4 },
         { p: 0.5, amp: 0.6, intensity: 0.7 },
         { p: 0.75, amp: 0.9, intensity: 0.2 },
-        { p: 1.0, amp: 0.7, intensity: 0.9 },
+        { p: 1.0, amp: 0.7, intensity: 0.9 }
       ];
 
       for (const { p, amp, intensity } of testCases) {
@@ -100,7 +99,7 @@ describe("spotlightEffects", () => {
       const mockFetch = vi.mocked(global.fetch);
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 404,
+        status: 404
       } as unknown as Response);
 
       await warmupSpotlightWasm();
@@ -109,6 +108,10 @@ describe("spotlightEffects", () => {
       const pulse = calculatePulse(0.5, 0.8);
       const expectedPulse = spotlightMath.calculatePulse(0.5, 0.8);
       expect(pulse).toBe(expectedPulse);
+
+      const glitch = calculateGlitch(0.5, 0.8);
+      const expectedGlitch = spotlightMath.calculateGlitch(0.5, 0.8);
+      expect(glitch).toBe(expectedGlitch);
     });
   });
 });

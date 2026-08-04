@@ -5,17 +5,13 @@
   ],
   "allowedpaths": [
     "/content/dam/.*",
-    "/content/graphql/global/endpoint"
+    "/content/_cq_graphql/spotlight/endpoint.json"
   ],
   "exposedheaders": [
     "ETag",
     "Content-Disposition"
   ],
-  "supportedmethods": [
-    "GET",
-    "HEAD",
-    "OPTIONS"
-  ],
+  "supportedmethods": ["GET", "HEAD", "POST", "OPTIONS"],
   "supportedheaders": [
     "Authorization",
     "Origin",

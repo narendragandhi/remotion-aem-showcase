@@ -19,8 +19,10 @@ export type EffectType = z.infer<typeof EffectTypeSchema>;
 
 // CSS color validation (hex, rgb, named colors)
 const cssColorRegex = /^(#([0-9A-Fa-f]{3}){1,2}|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|[a-zA-Z]+)$/;
-const CssColorSchema = z.string().regex(cssColorRegex, "Invalid CSS color format").or(z.string().min(1));
-
+const CssColorSchema = z
+  .string()
+  .regex(cssColorRegex, "Invalid CSS color format")
+  .or(z.string().min(1));
 
 /**
  * Schema for a single spotlight scene.
@@ -28,9 +30,13 @@ const CssColorSchema = z.string().regex(cssColorRegex, "Invalid CSS color format
  */
 export const SpotlightSceneSchema = z.object({
   title: z.string().min(1).default("Untitled"),
+  eyebrow: z.string().default("AEM / LIVE"),
   subtitle: z.string().default(""),
   cta: z.string().min(1).default("Learn more"),
   brandColor: CssColorSchema.default("#0E3B5A"),
+  accentColor: CssColorSchema.default("#82ffca"),
+  metricLabel: z.string().default("SIGNAL"),
+  metricValue: z.string().default("100%"),
   imageUrl: z.string().default(""),
   durationSeconds: z.number().positive().int().default(4),
   animationStyle: AnimationStyleSchema.default("minimal"),
@@ -38,7 +44,7 @@ export const SpotlightSceneSchema = z.object({
   effectType: EffectTypeSchema.default("none"),
   effectIntensity: z.number().min(0).max(1).default(0.5),
   lottieUrl: z.string().default(""),
-  svgOverlayUrl: z.string().default(""),
+  svgOverlayUrl: z.string().default("")
 });
 
 export type SpotlightScene = z.infer<typeof SpotlightSceneSchema>;
@@ -49,7 +55,7 @@ export type SpotlightScene = z.infer<typeof SpotlightSceneSchema>;
  */
 export const AemSpotlightSchema = z.object({
   id: z.string().min(1),
-  scenes: z.array(SpotlightSceneSchema).min(1),
+  scenes: z.array(SpotlightSceneSchema).min(1)
 });
 
 export type AemSpotlight = z.infer<typeof AemSpotlightSchema>;
@@ -57,11 +63,13 @@ export type AemSpotlight = z.infer<typeof AemSpotlightSchema>;
 /**
  * Schema for raw AEM GraphQL image reference.
  */
-const AemImageRefSchema = z.object({
-  _publishUrl: z.string().optional(),
-  _authorUrl: z.string().optional(),
-  _path: z.string().optional(),
-}).optional();
+const AemImageRefSchema = z
+  .object({
+    _publishUrl: z.string().optional(),
+    _authorUrl: z.string().optional(),
+    _path: z.string().optional()
+  })
+  .optional();
 
 /**
  * Base schema for raw AEM GraphQL item (without recursion).
@@ -69,17 +77,27 @@ const AemImageRefSchema = z.object({
 const AemGraphQLItemBaseSchema = z.object({
   _path: z.string().optional(),
   title: z.string().optional(),
-  subtitle: z.string().optional(),
+  eyebrow: z.string().optional(),
+  subtitle: z
+    .union([
+      z.string(),
+      z.object({ plaintext: z.string().optional(), html: z.string().optional() })
+    ])
+    .optional(),
   cta: z.string().optional(),
   brandColor: z.string().optional(),
+  accentColor: z.string().optional(),
+  metricLabel: z.string().optional(),
+  metricValue: z.string().optional(),
+  imageUrl: z.string().nullable().optional(),
   image: AemImageRefSchema,
   durationSeconds: z.union([z.number(), z.string()]).optional(),
   animationStyle: z.string().optional(),
   renditionType: z.string().optional(),
   effectType: z.string().optional(),
   effectIntensity: z.union([z.number(), z.string()]).optional(),
-  lottieUrl: z.string().optional(),
-  svgOverlayUrl: z.string().optional(),
+  lottieUrl: z.string().nullable().optional(),
+  svgOverlayUrl: z.string().nullable().optional()
 });
 
 /**
@@ -87,7 +105,7 @@ const AemGraphQLItemBaseSchema = z.object({
  * Includes nested items for container fragments.
  */
 export const AemGraphQLItemSchema: z.ZodType<AemGraphQLItem> = AemGraphQLItemBaseSchema.extend({
-  items: z.array(z.lazy((): z.ZodType<AemGraphQLItem> => AemGraphQLItemSchema)).optional(),
+  items: z.array(z.lazy((): z.ZodType<AemGraphQLItem> => AemGraphQLItemSchema)).optional()
 });
 
 export type AemGraphQLItem = z.infer<typeof AemGraphQLItemBaseSchema> & {
@@ -98,28 +116,49 @@ export type AemGraphQLItem = z.infer<typeof AemGraphQLItemBaseSchema> & {
  * Schema for AEM GraphQL response structure.
  */
 export const AemGraphQLResponseSchema = z.object({
-  data: z.object({
-    // Standard Content Fragment by path query
-    contentFragmentByPath: z.object({
-      item: AemGraphQLItemSchema.optional(),
-    }).optional(),
-    // Alternative: Content Fragment list query
-    contentFragmentList: z.object({
-      items: z.array(AemGraphQLItemSchema).optional(),
-    }).optional(),
-    // Alternative: Persisted query results
-    spotlightList: z.object({
-      items: z.array(AemGraphQLItemSchema).optional(),
-    }).optional(),
-  }).optional(),
-  errors: z.array(z.object({
-    message: z.string(),
-    locations: z.array(z.object({
-      line: z.number(),
-      column: z.number(),
-    })).optional(),
-    path: z.array(z.string()).optional(),
-  })).optional(),
+  data: z
+    .object({
+      // Standard Content Fragment by path query
+      contentFragmentByPath: z
+        .object({
+          item: AemGraphQLItemSchema.optional()
+        })
+        .optional(),
+      spotlightVideoSceneByPath: z
+        .object({
+          item: AemGraphQLItemSchema.optional()
+        })
+        .optional(),
+      // Alternative: Content Fragment list query
+      contentFragmentList: z
+        .object({
+          items: z.array(AemGraphQLItemSchema).optional()
+        })
+        .optional(),
+      // Alternative: Persisted query results
+      spotlightList: z
+        .object({
+          items: z.array(AemGraphQLItemSchema).optional()
+        })
+        .optional()
+    })
+    .optional(),
+  errors: z
+    .array(
+      z.object({
+        message: z.string(),
+        locations: z
+          .array(
+            z.object({
+              line: z.number(),
+              column: z.number()
+            })
+          )
+          .optional(),
+        path: z.array(z.string()).optional()
+      })
+    )
+    .optional()
 });
 
 export type AemGraphQLResponse = z.infer<typeof AemGraphQLResponseSchema>;

@@ -41,6 +41,14 @@ jobs:
         run: npm run type-check
         working-directory: ${{ env.WORKING_DIR }}
 
+      - name: Check documentation links
+        run: npm run check:docs
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Check formatting
+        run: npm run format:check
+        working-directory: ${{ env.WORKING_DIR }}
+
       - name: Lint
         run: npm run lint
         working-directory: ${{ env.WORKING_DIR }}
@@ -248,11 +256,21 @@ jobs:
         run: npm run build:wasm
         working-directory: ${{ env.WORKING_DIR }}
 
+      - name: Require live AEM configuration
+        run: |
+          test -n "$AEM_BASE_URL" || { echo "AEM_BASE_URL is required for production renders"; exit 1; }
+          test -n "$AEM_TOKEN" || { echo "AEM_TOKEN is required for production renders"; exit 1; }
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          AEM_BASE_URL: ${{ secrets.AEM_BASE_URL }}
+          AEM_TOKEN: ${{ secrets.AEM_TOKEN }}
+
       - name: Render all formats
         run: npm run render:all
         working-directory: ${{ env.WORKING_DIR }}
         env:
           USE_MOCK_AEM: 'false'
+          AEM_STRICT_MODE: 'true'
           AEM_BASE_URL: ${{ secrets.AEM_BASE_URL }}
           AEM_TOKEN: ${{ secrets.AEM_TOKEN }}
           AEM_GRAPHQL_ENDPOINT: ${{ secrets.AEM_GRAPHQL_ENDPOINT }}

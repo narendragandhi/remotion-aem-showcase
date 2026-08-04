@@ -5,7 +5,7 @@ import {
   getDynamicRenditionUrl,
   resolveAssetUrl,
   validateMockData,
-  fetchAemSpotlight,
+  fetchAemSpotlight
 } from "./aemClient";
 import { AemGraphQLItem } from "./schema";
 import { clearCache } from "../cache";
@@ -25,7 +25,7 @@ describe("mapAemItemToSpotlight", () => {
       effectType: "glitch",
       effectIntensity: 0.7,
       lottieUrl: "https://example.com/anim.json",
-      svgOverlayUrl: "https://example.com/overlay.svg",
+      svgOverlayUrl: "https://example.com/overlay.svg"
     };
 
     const result = mapAemItemToSpotlight(item);
@@ -34,9 +34,13 @@ describe("mapAemItemToSpotlight", () => {
     expect(result.scenes).toHaveLength(1);
     expect(result.scenes[0]).toEqual({
       title: "Spotlight",
+      eyebrow: "AEM / LIVE",
       subtitle: "DDP Launch",
       cta: "Open",
       brandColor: "#FF6600",
+      accentColor: "#82ffca",
+      metricLabel: "SIGNAL",
+      metricValue: "70%",
       imageUrl: "https://example.com/hero.png",
       durationSeconds: 8,
       animationStyle: "cinematic",
@@ -44,13 +48,13 @@ describe("mapAemItemToSpotlight", () => {
       effectType: "glitch",
       effectIntensity: 0.7,
       lottieUrl: "https://example.com/anim.json",
-      svgOverlayUrl: "https://example.com/overlay.svg",
+      svgOverlayUrl: "https://example.com/overlay.svg"
     });
   });
 
   it("applies defaults for missing fields", () => {
     const item: AemGraphQLItem = {
-      _path: "/content/dam/example/spotlight",
+      _path: "/content/dam/example/spotlight"
     };
 
     const result = mapAemItemToSpotlight(item);
@@ -66,7 +70,7 @@ describe("mapAemItemToSpotlight", () => {
       effectType: "none",
       effectIntensity: 0.5,
       lottieUrl: "",
-      svgOverlayUrl: "",
+      svgOverlayUrl: ""
     });
   });
 
@@ -77,14 +81,14 @@ describe("mapAemItemToSpotlight", () => {
         {
           title: "Scene 1",
           image: { _publishUrl: "https://example.com/1.png" },
-          durationSeconds: 5,
+          durationSeconds: 5
         },
         {
           title: "Scene 2",
           image: { _publishUrl: "https://example.com/2.png" },
-          durationSeconds: 3,
-        },
-      ],
+          durationSeconds: 3
+        }
+      ]
     };
 
     const result = mapAemItemToSpotlight(item);
@@ -99,7 +103,7 @@ describe("mapAemItemToSpotlight", () => {
     const item: AemGraphQLItem = {
       _path: "/content/dam/test",
       effectIntensity: 2.5, // Out of range
-      image: { _publishUrl: "https://example.com/test.png" },
+      image: { _publishUrl: "https://example.com/test.png" }
     };
 
     const result = mapAemItemToSpotlight(item);
@@ -110,7 +114,7 @@ describe("mapAemItemToSpotlight", () => {
   it("handles author URL fallback", () => {
     const item: AemGraphQLItem = {
       _path: "/content/dam/test",
-      image: { _authorUrl: "https://author.example.com/hero.png" },
+      image: { _authorUrl: "https://author.example.com/hero.png" }
     };
 
     const result = mapAemItemToSpotlight(item);
@@ -124,7 +128,7 @@ describe("mapAemItemToSpotlight", () => {
 
     const item: AemGraphQLItem = {
       _path: "/content/dam/test",
-      image: { _path: "/content/dam/images/hero.png" },
+      image: { _path: "/content/dam/images/hero.png" }
     };
 
     const result = mapAemItemToSpotlight(item);
@@ -159,6 +163,17 @@ describe("getDynamicRenditionUrl", () => {
     const result = getDynamicRenditionUrl(url, 800, 600, "original");
 
     expect(result).toContain("q=100");
+  });
+
+  it("uses Adobe Dynamic Media image serving modifiers", () => {
+    const url = "https://delivery.example.com/is/image/demo/hero?fmt=png";
+    const result = getDynamicRenditionUrl(url, 1920, 1080, "optimized");
+
+    expect(result).toContain("wid=1920");
+    expect(result).toContain("hei=1080");
+    expect(result).toContain("qlt=85");
+    expect(result).toContain("fit=constrain");
+    expect(result).toContain("fmt=webp");
   });
 
   it("handles AEM URLs with web-optimized params", () => {
@@ -281,15 +296,15 @@ describe("fetchAemSpotlight", () => {
             _path: "/test/path",
             title: "Test Title",
             image: { _publishUrl: "https://example.com/test.png" },
-            durationSeconds: 5,
-          },
-        },
-      },
+            durationSeconds: 5
+          }
+        }
+      }
     };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockResponse),
+      json: () => Promise.resolve(mockResponse)
     });
 
     const result = await fetchAemSpotlight();
@@ -306,7 +321,7 @@ describe("fetchAemSpotlight", () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      statusText: "Internal Server Error",
+      statusText: "Internal Server Error"
     });
 
     const result = await fetchAemSpotlight();

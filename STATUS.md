@@ -1,6 +1,6 @@
 # Project Status: Remotion AEM Spotlight
 
-## Current State: Production-Ready Demo
+## Current State: Production-Quality Showcase Foundation
 
 This project is a fully working showcase of AEM + Remotion integration. It renders
 correctly against mock data and is structured to connect to a real AEM Cloud Service
@@ -13,7 +13,8 @@ instance once credentials are configured (see `.env.example`).
 | Area | Status | Notes |
 |------|--------|-------|
 | Multi-format compositions (16:9, 9:16, 1:1, 4K) | ✅ | Verified via smoke stills |
-| AEM GraphQL client with Zod validation | ✅ | Mock mode; real AEM untested |
+| AEM GraphQL client with Zod validation | ✅ | Verified against the local AEM Author GraphQL endpoint |
+| PostgreSQL provenance + render worker | ✅ | Verified locally: queued job → Remotion MP4 → checksum/audit record |
 | WASM pulse/glitch effects with JS fallback | ✅ | `delayRender` gates frames correctly |
 | Native Remotion pulse background animation | ✅ | Frame-driven via `spring()` |
 | Error boundaries + typed errors | ✅ | Gracefully handles asset 404s |
@@ -24,13 +25,13 @@ instance once credentials are configured (see `.env.example`).
 
 ---
 
-## What Requires a Real AEM Instance
+## What Requires a Production AEM Environment
 
 The following cannot be tested without an AEM Cloud Service environment:
 
-- Live GraphQL content fetching (`USE_MOCK_AEM=false`)
+- Cloud Service GraphQL content fetching and publish-tier behavior
 - IMS token auto-refresh (`AEM_IMS_*` env vars)
-- DAM asset URL resolution
+- Production DAM asset URL resolution and delivery policy
 - Upload to AEM DAM (`scripts/upload-to-aem.js`)
 - CI deploy job (requires `AEM_BASE_URL` + `AEM_TOKEN` secrets)
 
@@ -45,6 +46,8 @@ See `docs/aem-integration-guide.md` for setup instructions.
   is demonstrating the integration pattern, not raw performance gain.
 - **Telemetry**: Console and webhook backends are functional. Adobe Analytics integration
   would require adding `@adobe/alloy` and wiring `_satellite.track()` calls.
+- **Lottie**: `lottieUrl` remains in the content model for compatibility, but the current
+  renderer uses the native frame-driven pulse background instead of loading Lottie files.
 - **Mock examples**: `src/mock/examples/` contains additional scenario mocks
   (loyalty, ecommerce, news, global) selectable via `REMOTION_MOCK_FILE`.
 
@@ -85,9 +88,10 @@ See `docs/aem-integration-guide.md` for setup instructions.
 
 ---
 
-## Next Steps (Post-Demo)
+## Next Steps (Design-Partner Beta)
 
-1. Wire to a real AEM Cloud Service sandbox and verify end-to-end
-2. Implement Adobe Analytics telemetry via `@adobe/alloy`
-3. Add personalization: user-segment-aware content fragment selection
-4. Profile WASM vs JS on real render workloads
+1. Add OIDC/SAML identity and application role authorization
+2. Move PostgreSQL and worker to managed, monitored infrastructure
+3. Verify against an AEM Cloud Service sandbox and publish tier end-to-end
+4. Add asset allowlists, quotas, backups, and incident procedures
+5. Profile WASM vs JS on real render workloads

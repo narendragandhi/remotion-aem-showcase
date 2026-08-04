@@ -1,0 +1,41 @@
+{
+  "id": "/content/dam/northstar/campaigns/fr-fr/luma-one",
+  "scenes": [
+    {
+      "title": "Voici Luma One",
+      "eyebrow": "NORTHSTAR / NOUVEAUTÉ",
+      "subtitle": "Une lumière plus juste pour les espaces qui comptent.",
+      "cta": "Découvrir Luma One",
+      "brandColor": "#17233D",
+      "accentColor": "#82FFCA",
+      "metricLabel": "MODES DE LUMIÈRE",
+      "metricValue": "12",
+      "imageUrl": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 5,
+      "animationStyle": "cinematic",
+      "renditionType": "optimized",
+      "effectType": "glow",
+      "effectIntensity": 0.65,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    },
+    {
+      "title": "La lumière suit votre rythme",
+      "eyebrow": "PENSÉE POUR S'ADAPTER",
+      "subtitle": "Des matins calmes aux soirées lentes.",
+      "cta": "Voir les détails",
+      "brandColor": "#283E52",
+      "accentColor": "#FFB84D",
+      "metricLabel": "GARANTIE",
+      "metricValue": "5 ANS",
+      "imageUrl": "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80&w=1280",
+      "durationSeconds": 5,
+      "animationStyle": "minimal",
+      "renditionType": "web",
+      "effectType": "none",
+      "effectIntensity": 0,
+      "lottieUrl": "",
+      "svgOverlayUrl": ""
+    }
+  ]
+}
