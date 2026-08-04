@@ -16,6 +16,7 @@ repeatable integration check.
 | Claim | Status | Evidence | Limitation |
 |---|---|---|---|
 | AEM GraphQL content maps into the domain model | Partially verified | `npm test`; local AEM verification; `src/aem/aemClient.ts` | Cloud Service/publish-tier evidence pending |
+| AEM-backed Edge Delivery Services compatibility | Planned | `docs/eds-compatibility.md` | Source adapter and real EDS publish/delivery test pending |
 | Northstar campaign fixtures validate | Verified | `npm test`; Zod parsing in `web/App.tsx` | Fixtures are fictional and use stock image URLs |
 | Remotion Player previews the same composition family | Verified | `npm run build:web`; Playwright browser snapshot | Browser test is local, not a hosted deployment test |
 | 16:9, 9:16, 1:1, and 4K compositions exist | Verified | `src/index.tsx`; `npm run build:web`; smoke/render scripts | Full 4K live render is not required on every PR |

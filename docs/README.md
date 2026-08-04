@@ -22,6 +22,7 @@ traced to implementation and verification.
 | [Launch plan](launch-plan.md) | Staged path from showcase to design-partner beta | Active |
 | [Guiding principles](guiding-principles.md) | Reusable product and architecture principles | Active |
 | [Load testing](load-testing.md) | Local concurrency test and production capacity path | Active |
+| [EDS compatibility](eds-compatibility.md) | Edge Delivery Services fit and adapter boundary | Active |
 | [Design contract](../DESIGN.md) | Visual, motion, voice, and delivery rules | Active |
 | [Domain model](domain-model.md) | AEM-to-domain translation and invariants | Active |
 | [Positioning and support](positioning-and-support.md) | Customer promise and support boundary | Active |
