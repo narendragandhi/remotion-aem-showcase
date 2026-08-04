@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "no
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { Pool } from "pg";
+import { validateMediaFile } from "./validate-media.mjs";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required");
@@ -86,7 +87,14 @@ async function markCompleted(renderId, outputs) {
     await client.query("update render_jobs set status = 'completed', completed_at = now(), lease_until = null, worker_id = null where render_id = $1", [renderId]);
     await client.query(
       "insert into render_job_events (render_id, from_status, to_status, actor_id, metadata) values ($1, 'rendering', 'completed', $2, $3::jsonb)",
-      [renderId, workerId, JSON.stringify({ formats: outputs.map((output) => output.format) })]
+      [
+        renderId,
+        workerId,
+        JSON.stringify({
+          formats: outputs.map((output) => output.format),
+          mediaValidation: outputs.map((output) => ({ format: output.format, ...output.media }))
+        })
+      ]
     );
     await client.query("commit");
   } catch (error) {
@@ -116,8 +124,15 @@ async function processJob(job) {
       });
       if (result.error) throw new Error(`Remotion render failed for ${format}: ${result.error.message}`);
       if (result.status !== 0) throw new Error(`Remotion render failed for ${format} with exit code ${result.status}`);
+      const media = validateMediaFile(outputPath, format);
       const fileBytes = readFileSync(outputPath);
-      outputs.push({ format, url: `file://${outputPath}`, byteSize: statSync(outputPath).size, checksum: createHash("sha256").update(fileBytes).digest("hex") });
+      outputs.push({
+        format,
+        media,
+        url: `file://${outputPath}`,
+        byteSize: statSync(outputPath).size,
+        checksum: createHash("sha256").update(fileBytes).digest("hex")
+      });
     }
     await markCompleted(job.render_id, outputs);
     console.log(`[Provenance worker] Completed ${job.render_id}`);

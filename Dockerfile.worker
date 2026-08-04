@@ -1,0 +1,24 @@
+FROM node:22-bookworm-slim
+
+ENV NODE_ENV=production
+ENV PROVENANCE_OUTPUT_DIR=/app/.local/provenance/outputs
+
+RUN apt-get update \
+  && apt-get install --no-install-recommends -y ffmpeg chromium \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --include=dev --omit=optional
+
+COPY src ./src
+COPY scripts ./scripts
+COPY aem-config ./aem-config
+
+RUN mkdir -p /app/.local/provenance/outputs \
+  && chown -R node:node /app
+
+USER node
+
+ENTRYPOINT ["node", "scripts/provenance-worker.mjs"]

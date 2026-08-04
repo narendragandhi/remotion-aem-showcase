@@ -1,0 +1,12 @@
+node_modules
+dist
+out
+.local
+.git
+.github
+.playwright-cli
+.env
+.env.*.local
+*.mp4
+*.webm
+*.mov

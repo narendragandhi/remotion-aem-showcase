@@ -13,6 +13,7 @@ instance once credentials are configured (see `.env.example`).
 | Area | Status | Notes |
 |------|--------|-------|
 | Multi-format compositions (16:9, 9:16, 1:1, 4K) | ✅ | Verified via smoke stills |
+| Campaign Intelligence Player opener | ✅ | Frame-driven 90-frame content-to-motion reveal |
 | AEM GraphQL client with Zod validation | ✅ | Verified against the local AEM Author GraphQL endpoint |
 | PostgreSQL provenance + render worker | ✅ | Verified locally: queued job → Remotion MP4 → checksum/audit record |
 | WASM pulse/glitch effects with JS fallback | ✅ | `delayRender` gates frames correctly |

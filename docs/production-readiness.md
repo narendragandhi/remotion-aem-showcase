@@ -22,12 +22,12 @@ verification are incomplete.
 | Code quality | Strong foundation | TypeScript, Zod, tests, lint, formatting, CI |
 | Documentation | Strong | PRD, architecture, specs, ADRs, contributor workflow |
 | Preview experience | Demo-ready | Live AEM and mock paths; local drafts only |
-| Rendering | Demo-ready | Remotion renders and smoke evidence; no job worker yet |
+| Rendering | Demo-ready | Remotion worker, leases/retries, FFmpeg/ffprobe validation, and a reproducible worker image are implemented |
 | Provenance | Partial | Local JSON adapter; production database needed |
 | Identity/authentication | Not production-ready | Local API routes are unauthenticated |
 | Authorization | Not production-ready | No campaign/template/format policy enforcement |
 | AEM production integration | Incomplete | Local Author verified; Cloud Service/publish tier pending |
-| Operational resilience | Incomplete | No queue, retries, worker isolation, backups, or recovery plan |
+| Operational resilience | Incomplete | Local queue/lease/retry reference exists; production load, worker capacity, backups, and recovery remain unverified |
 | Security hardening | Incomplete | Needs validation, rate limits, asset policy, headers, scanning |
 
 ## Security boundary assessment
@@ -80,7 +80,7 @@ They must not be exposed as production services.
 1. Cloud Service Author and Publish tier verification.
 2. Authenticated API integration tests.
 3. PostgreSQL persistence and migration tests.
-4. Render queue lifecycle tests, including retry and failure behavior.
+4. Render queue lifecycle tests, including retry, timeout, media-validation, and failure behavior.
 5. Asset allowlist and SSRF regression tests.
 6. Browser security-header and CSRF tests.
 7. Backup/restore and retention test.

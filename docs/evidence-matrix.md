@@ -22,7 +22,8 @@ repeatable integration check.
 | Live AEM campaign renders to MP4 | Partially verified | `scripts/render-live-aem.cjs`; local AEM MP4 artifacts | Cloud Service asset policy and publish tier pending |
 | Dynamic Media remains complementary | Partially verified | `getDynamicRenditionUrl` tests/code | Requires customer Dynamic Media delivery test |
 | PostgreSQL provenance persistence works | Verified | `npm run verify:provenance:db`; local PostgreSQL rows | Local Docker only |
-| PostgreSQL-backed worker creates a real MP4 | Verified | `npm run worker:provenance -- --once`; `.local/provenance/outputs/` | Local worker reference, not managed production infrastructure |
+| PostgreSQL-backed worker creates and validates a real MP4 | Partially verified | `npm run worker:provenance -- --once`; `scripts/validate-media.mjs`; `.local/provenance/outputs/` | Requires FFmpeg/ffprobe locally; managed worker remains unverified |
+| Provenance API handles concurrent requests | Partially verified | `npm run load:test:provenance` | Local concurrency only; no production API, queue, AEM, or render-throughput evidence |
 | Worker leases/retries/timeouts exist | Partially verified | `db/migrations/002_worker_leases.sql`; worker code; real leased render | Successful lease path verified; forced crash/retry test remains |
 | Human SSO and role authorization exist | Planned | `docs/identity-and-access.md`, ADR-007 | No OIDC callback, session, or authorization middleware yet |
 | Adobe IMS OAuth service identity is used | Partially verified | AEM token manager and configuration | Local token path exists; production secret rotation/policy pending |

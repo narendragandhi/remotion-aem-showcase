@@ -38,6 +38,8 @@
     "verify:aem:json": "node scripts/verify-aem.js --json",
     "verify:provenance:db": "node scripts/verify-provenance-db.mjs",
     "worker:provenance": "node scripts/provenance-worker.mjs",
+    "validate:media": "node scripts/validate-media.mjs",
+    "load:test:provenance": "node scripts/load-test-provenance.mjs",
     "dev:web": "vite",
     "build:web": "vite build",
     "check:docs": "node scripts/check-doc-links.mjs",

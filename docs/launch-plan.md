@@ -12,7 +12,7 @@ Status: **Ready with honest positioning**
 - Remotion Player preview
 - Multi-format compositions
 - Local PostgreSQL provenance path
-- Reference render worker
+- Reference render worker with FFmpeg/ffprobe media validation
 - Evidence matrix and production-readiness boundary
 
 Public language:
@@ -28,7 +28,8 @@ Required gates:
 1. Deploy behind HTTPS and an OIDC identity provider.
 2. Add the five application roles in `docs/identity-and-access.md`.
 3. Use managed PostgreSQL with backups and migrations.
-4. Run the worker in an isolated service with a queue, lease monitoring, and logs.
+4. Run the worker in an isolated service with a queue, lease monitoring, logs, and
+   an FFmpeg-enabled image.
 5. Verify AEM Cloud Service Author and Publish behavior.
 6. Add asset host allowlists and render quotas.
 7. Establish support ownership and a short incident runbook.

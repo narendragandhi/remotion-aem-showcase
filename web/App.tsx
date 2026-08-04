@@ -1,6 +1,9 @@
 import { Player } from "@remotion/player";
 import { useEffect, useMemo, useState } from "react";
-import { SpotlightComposition } from "../src/compositions/SpotlightComposition";
+import {
+  CampaignIntelligenceComposition,
+  CAMPAIGN_INTELLIGENCE_INTRO_FRAMES
+} from "../src/compositions/SpotlightComposition";
 import defaultMock from "../src/mock/aem.json";
 import loyaltyMock from "../src/mock/examples/loyalty_year_in_review.json";
 import ecommerceMock from "../src/mock/examples/ecommerce_product_spotlight.json";
@@ -212,8 +215,12 @@ export default function App() {
     [orderedSpotlight, previewOverrides]
   );
   const ratio = RATIOS.find((r) => r.id === ratioId)!;
-  const totalFrames = spotlight.scenes.reduce((a, s) => a + s.durationSeconds, 0) * FPS;
-  const totalSeconds = spotlight.scenes.reduce((a, s) => a + s.durationSeconds, 0);
+  const totalFrames =
+    spotlight.scenes.reduce((a, s) => a + s.durationSeconds, 0) * FPS +
+    CAMPAIGN_INTELLIGENCE_INTRO_FRAMES;
+  const previewSeconds =
+    spotlight.scenes.reduce((a, s) => a + s.durationSeconds, 0) +
+    CAMPAIGN_INTELLIGENCE_INTRO_FRAMES / FPS;
   const templateIssues = validateSpotlightForTemplate(spotlight, ratioId, SPOTLIGHT_TEMPLATE);
   const setPreviewField = <K extends keyof SpotlightScene>(field: K, value: SpotlightScene[K]) => {
     setPreviewOverrides((current) => ({ ...current, [field]: value }));
@@ -556,7 +563,7 @@ export default function App() {
               {spotlight.scenes.length !== 1 ? "s" : ""}
             </span>
             <span style={{ margin: "0 0.4rem", color: "#2a2a2a" }}>·</span>
-            <span>{totalSeconds}s</span>
+            <span>{previewSeconds}s preview</span>
             <span style={{ margin: "0 0.4rem", color: "#2a2a2a" }}>·</span>
             <span>
               {ratio.width}×{ratio.height}
@@ -943,7 +950,7 @@ export default function App() {
         >
           <Player
             key={`${sourceKey}-${ratioId}`}
-            component={SpotlightComposition}
+            component={CampaignIntelligenceComposition}
             inputProps={{ spotlight }}
             durationInFrames={totalFrames}
             compositionWidth={ratio.width}

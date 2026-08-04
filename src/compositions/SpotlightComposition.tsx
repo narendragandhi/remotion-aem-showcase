@@ -189,8 +189,7 @@ const SignalHUD: React.FC<{
             style={{
               flex: 1,
               height: `${5 + ((index * 17 + frame * 3) % 13)}px`,
-              background: index / 18 < scene.effectIntensity ? accent : "rgba(255,255,255,0.22)",
-              transition: "height 100ms linear"
+              background: index / 18 < scene.effectIntensity ? accent : "rgba(255,255,255,0.22)"
             }}
           />
         ))}
@@ -571,6 +570,7 @@ const CampaignIntelligenceIntro: React.FC<{ spotlight: AemSpotlight }> = ({ spot
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const isPortrait = height > width;
+  const heroScene = spotlight.scenes[0];
   const reveal = spring({ frame, fps, config: { mass: 0.8, damping: 18, stiffness: 100 } });
   const exit = interpolate(frame, [66, 89], [1, 0], {
     extrapolateLeft: "clamp",
@@ -654,6 +654,114 @@ const CampaignIntelligenceIntro: React.FC<{ spotlight: AemSpotlight }> = ({ spot
           One authored brief becomes a living motion system—previewable, reorderable, and ready for
           every channel.
         </p>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          right: isPortrait ? "8%" : "8%",
+          top: isPortrait ? "28%" : "16%",
+          width: isPortrait ? "84%" : "34%",
+          height: isPortrait ? "24%" : "54%",
+          border: "1px solid rgba(130,255,202,0.36)",
+          background: "rgba(5,8,18,0.42)",
+          boxShadow: "0 0 90px rgba(20,115,230,0.22)",
+          opacity: interpolate(reveal, [0, 1], [0, 1]),
+          transform: `translateY(${interpolate(reveal, [0, 1], [30, 0])}px)`,
+          overflow: "hidden",
+          zIndex: 2
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(135deg, ${heroScene.brandColor}99, transparent 58%)`
+          }}
+        />
+        <Img
+          src={getDynamicRenditionUrl(heroScene.imageUrl, width, height, heroScene.renditionType)}
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            width: "68%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: 0.72,
+            transform: `scale(${1.08 - reveal * 0.08})`
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(90deg, rgba(5,8,18,0.98) 0%, rgba(5,8,18,0.58) 48%, rgba(5,8,18,0.08) 100%)"
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: "7%",
+            top: "10%",
+            color: "#82ffca",
+            fontSize: "0.58rem",
+            letterSpacing: "0.18em",
+            fontWeight: 700
+          }}
+        >
+          CONTENT FRAGMENT / LIVE
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            left: "7%",
+            bottom: "12%",
+            width: "55%",
+            color: "#fff"
+          }}
+        >
+          <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.58)" }}>
+            {heroScene.eyebrow}
+          </div>
+          <div
+            style={{
+              marginTop: "0.35rem",
+              fontSize: isPortrait ? "1.4rem" : "1.65rem",
+              lineHeight: 1,
+              letterSpacing: "-0.04em",
+              fontWeight: 700
+            }}
+          >
+            {heroScene.title}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.4rem",
+              alignItems: "center",
+              marginTop: "0.75rem",
+              color: "#82ffca",
+              fontSize: "0.62rem",
+              letterSpacing: "0.12em"
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#82ffca" }} />
+            READY TO COMPOSE
+          </div>
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            right: "5%",
+            top: "8%",
+            color: "rgba(255,255,255,0.52)",
+            fontSize: "0.58rem",
+            letterSpacing: "0.14em"
+          }}
+        >
+          {String(frame).padStart(3, "0")} / 090
+        </div>
       </div>
       <div
         style={{

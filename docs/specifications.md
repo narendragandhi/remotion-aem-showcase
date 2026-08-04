@@ -86,7 +86,9 @@ The Player workspace must expose:
 - timeline/scene visibility;
 - review state and local draft state;
 - validation or loading failures;
-- a preview that uses the same composition family as final render.
+- a preview that uses the same composition family as final render;
+- a short Campaign Intelligence opener that makes the authored-content,
+  composition, and multi-channel delivery flow visible before the campaign scenes.
 
 Local drafts currently use browser storage. This is a demo persistence mechanism,
 not a multi-user source of truth. Durable drafts require a backend model, identity,

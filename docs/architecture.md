@@ -14,7 +14,7 @@ Status: Baseline
        |
        +--> validated campaign model --> Remotion Player --> marketer review
        |
-       +--> validated campaign model --> Remotion renderer --> MP4/DAM
+       +--> validated campaign model --> Remotion renderer --> FFmpeg/ffprobe gate --> MP4/DAM
        |
        +--> telemetry/cache/health
 ```
@@ -34,6 +34,7 @@ Vite `/api/aem` proxy; production requires an equivalent authenticated backend.
 | Composition | Frame-driven visual output and scene sequencing | `src/compositions/` |
 | Player workspace | Preview, sources, formats, review/draft controls | `web/App.tsx` |
 | Rendering adapter | Engine registry and future alternate engine boundary | `src/rendering/` |
+| Media validation | Verify container, codec, dimensions, duration, and byte size after render | `scripts/validate-media.mjs` |
 | Effects | Deterministic pulse/glitch math and fallback | `src/wasm/` |
 | Reliability | Typed errors, cache, health, telemetry | `src/errors/`, `src/cache/`, `src/health/`, `src/telemetry/` |
 | Provenance | Immutable render identity, content hash, lifecycle, and output references | `src/provenance/`, `/api/provenance` |
@@ -56,6 +57,8 @@ Vite `/api/aem` proxy; production requires an equivalent authenticated backend.
 4. Assets are resolved through AEM/Dynamic Media rules; authenticated assets may
    be materialized as data URLs by the live render script.
 5. Remotion emits an MP4 for the selected composition.
+6. `ffprobe` validates the MP4 container, video stream, dimensions, duration, and
+   byte size before the worker records completion and checksum provenance.
 
 ### Failure flow
 
@@ -64,6 +67,7 @@ AEM failure -> typed fetch error -> mock/fallback or visible failure
 Invalid data -> validation error -> warning/fallback according to strict mode
 Asset failure -> placeholder/error boundary -> render remains inspectable
 WASM failure -> JS effects fallback -> deterministic output
+Media validation failure -> retryable render failure -> no completed output record
 ```
 
 ## 4. Data ownership and boundaries
@@ -102,12 +106,18 @@ Browser -> authenticated application backend
                     +-> AEM Publish/Author tier
                     +-> cache / render queue
                     +-> Remotion render worker
+                              |
+                              +-> FFmpeg/ffprobe media quality gate
                     +-> AEM DAM or delivery storage
 ```
 
 The repository now implements a local/demo path, durable PostgreSQL persistence,
-and a reference Remotion worker. Production queueing, worker isolation, leases,
-durable identity/authorization, and managed output storage remain product work.
+a reference Remotion worker, and a worker-side FFmpeg/ffprobe quality gate.
+Production queueing, worker isolation, leases, durable identity/authorization, and
+managed output storage remain product work. The production worker image only needs
+to include Node, Chromium, Remotion's browser dependencies, and FFmpeg; no new
+application service is required for media validation. `Dockerfile.worker` is the
+reproducible reference image and runs as a non-root user.
 
 The local provenance API persists jobs to `.local/provenance/jobs.json`. This is a
 development adapter behind the `ProvenanceStore` interface. A production deployment
@@ -129,3 +139,4 @@ campaign revisions, render jobs, outputs, review events, and lifecycle audit eve
 | ARCH-05 | Browser code never owns AEM credentials. |
 | ARCH-06 | Every new output format declares dimensions and safe-area behavior. |
 | ARCH-07 | Alternate engines implement adapters behind the rendering boundary. |
+| ARCH-08 | A render cannot be marked completed until its media artifact passes the format contract. |

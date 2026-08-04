@@ -78,8 +78,29 @@ DATABASE_URL=postgresql://remotion:remotion_local_dev@127.0.0.1:55432/remotion_p
   npm run worker:provenance -- --once
 ```
 
-Outputs are written beneath `.local/provenance/outputs/<render-id>/`, checksummed,
-and recorded in `render_outputs`. The worker claims jobs with a lease, retries up
-to `max_attempts`, and marks a job failed after the retry limit. Omit `--once` to
-run a polling worker. This is a local worker reference; production should isolate
-workers and run them behind a managed queue.
+Outputs are written beneath `.local/provenance/outputs/<render-id>/`, validated with
+FFmpeg's `ffprobe`, checksummed, and recorded in `render_outputs`. The completion
+audit event includes the validated container, codec, dimensions, duration, and byte
+size. The worker claims jobs with a lease, retries up to `max_attempts`, and marks a
+job failed after the retry limit. Omit `--once` to run a polling worker. This is a
+local worker reference; production should isolate workers and run them behind a
+managed queue.
+
+Install FFmpeg locally before running the worker (`brew install ffmpeg` on macOS,
+or the equivalent package for the worker image). Set `FFPROBE_BIN` when the binary
+is not on `PATH`.
+
+For a reproducible worker image, build `Dockerfile.worker` from the repository root:
+
+```bash
+docker build -f Dockerfile.worker -t remotion-aem-worker .
+docker run --rm \
+  -e DATABASE_URL=postgresql://remotion:remotion_local_dev@host.docker.internal:55432/remotion_provenance \
+  -e PROVENANCE_WORKER_ID=local-container \
+  remotion-aem-worker --once
+```
+
+The image includes Chromium for Remotion and FFmpeg for artifact validation. It runs
+as the unprivileged `node` user. Production should provide the database URL and AEM
+credentials through a managed secret store, not through the image or a checked-in
+environment file.
