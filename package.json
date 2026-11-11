@@ -43,19 +43,21 @@
     "dev:web": "vite",
     "build:web": "vite build",
     "check:docs": "node scripts/check-doc-links.mjs",
-    "preview:web": "vite preview"
+    "preview:web": "vite preview",
+    "build:server": "vite build --config vite.server.config.ts",
+    "start:server": "node dist-server/server.mjs"
   },
   "dependencies": {
-    "@remotion/player": "^4.0.0",
+    "@remotion/player": "4.0.448",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "remotion": "^4.0.0",
+    "remotion": "4.0.448",
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@remotion/cli": "^4.0.0",
+    "@remotion/cli": "4.0.448",
     "@testing-library/react": "^14.1.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.10.6",

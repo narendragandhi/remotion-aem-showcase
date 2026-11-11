@@ -21,8 +21,7 @@ export type EffectType = z.infer<typeof EffectTypeSchema>;
 const cssColorRegex = /^(#([0-9A-Fa-f]{3}){1,2}|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|[a-zA-Z]+)$/;
 const CssColorSchema = z
   .string()
-  .regex(cssColorRegex, "Invalid CSS color format")
-  .or(z.string().min(1));
+  .regex(cssColorRegex, "Invalid CSS color format");
 
 /**
  * Schema for a single spotlight scene.

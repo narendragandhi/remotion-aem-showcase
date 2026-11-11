@@ -2,9 +2,11 @@ import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 import { mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { Pool } from "pg";
 import { validateMediaFile } from "./validate-media.mjs";
+
+import { validateAssets } from "./lib/asset-policy.mjs";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required");
@@ -13,6 +15,10 @@ const once = process.argv.includes("--once");
 const pollMs = Number(process.env.PROVENANCE_WORKER_POLL_MS || 2000);
 const leaseSeconds = Number(process.env.PROVENANCE_WORKER_LEASE_SECONDS || 900);
 const renderTimeoutMs = Number(process.env.PROVENANCE_WORKER_TIMEOUT_MS || 900000);
+for (const [name, value] of Object.entries({ pollMs, leaseSeconds, renderTimeoutMs })) {
+  if (!Number.isFinite(value) || value <= 0) throw new Error(`${name} must be positive`);
+}
+if (leaseSeconds < 3) throw new Error("Worker leases must be at least three seconds");
 const workerId = process.env.PROVENANCE_WORKER_ID || `${hostname()}-${process.pid}`;
 const outputRoot = resolve(process.env.PROVENANCE_OUTPUT_DIR || ".local/provenance/outputs");
 const pool = new Pool({ connectionString: databaseUrl, max: 2 });
@@ -28,8 +34,17 @@ async function claimJob() {
   const client = await pool.connect();
   try {
     await client.query("begin");
+    await client.query(`
+      with exhausted as (
+        update render_jobs set status = 'failed', failure_reason = 'Worker lease expired on final attempt', lease_until = null, worker_id = null
+        where status = 'rendering' and lease_until < now() and attempt_count >= max_attempts
+        returning render_id
+      )
+      insert into render_job_events (render_id, from_status, to_status, actor_id)
+      select render_id, 'rendering', 'failed', 'lease-recovery' from exhausted
+    `);
     const result = await client.query(`
-      select r.render_id, r.output_formats, c.content_snapshot, r.status, r.attempt_count, r.max_attempts
+      select r.render_id, r.rendering_engine, r.output_formats, c.content_snapshot, r.status, r.attempt_count, r.max_attempts
       from render_jobs r
       join campaign_revisions c on c.id = r.campaign_revision_id
       where (r.status = 'queued' or (r.status = 'rendering' and r.lease_until < now()))
@@ -52,7 +67,7 @@ async function claimJob() {
       [job.render_id, job.status, workerId, JSON.stringify({ attempt: job.attempt_count + 1, leaseSeconds })]
     );
     await client.query("commit");
-    return job;
+    return { ...job, attempt_count: job.attempt_count + 1 };
   } catch (error) {
     await client.query("rollback");
     throw error;
@@ -61,9 +76,11 @@ async function claimJob() {
   }
 }
 
-async function markFailed(renderId, error) {
+async function markFailed(job, error) {
+  const renderId = job.render_id;
   const message = String(error);
-  const result = await pool.query("update render_jobs set status = case when attempt_count < max_attempts then 'queued' else 'failed' end, failure_reason = $2, lease_until = null, worker_id = null where render_id = $1 returning status, attempt_count, max_attempts", [renderId, message]);
+  const result = await pool.query("update render_jobs set status = case when attempt_count < max_attempts then 'queued' else 'failed' end, failure_reason = $2, lease_until = null, worker_id = null where render_id = $1 and worker_id = $3 and attempt_count = $4 and status = 'rendering' and lease_until > now() returning status, attempt_count, max_attempts", [renderId, message, workerId, job.attempt_count]);
+  if (!result.rowCount) return;
   const status = result.rows[0]?.status || "failed";
   const nextStatus = status === "queued" ? "queued" : "failed";
   await pool.query(
@@ -72,10 +89,13 @@ async function markFailed(renderId, error) {
   );
 }
 
-async function markCompleted(renderId, outputs) {
+async function markCompleted(job, outputs) {
+  const renderId = job.render_id;
   const client = await pool.connect();
   try {
     await client.query("begin");
+    const owned = await client.query("select render_id from render_jobs where render_id = $1 and worker_id = $2 and attempt_count = $3 and status = 'rendering' and lease_until > now() for update", [renderId, workerId, job.attempt_count]);
+    if (!owned.rowCount) throw new Error("Render lease lost before completion");
     for (const output of outputs) {
       await client.query(
         `insert into render_outputs (render_id, output_format, asset_url, checksum, byte_size)
@@ -105,25 +125,51 @@ async function markCompleted(renderId, outputs) {
   }
 }
 
+async function renderWithLease(job, command, args, options) {
+  await new Promise((resolveRender, reject) => {
+    const child = spawn(command, args, options);
+    let renewing = false;
+    let leaseError;
+    const timer = setInterval(async () => {
+      if (renewing) return;
+      renewing = true;
+      try {
+        const renewed = await pool.query("update render_jobs set lease_until = now() + ($4 * interval '1 second') where render_id = $1 and worker_id = $2 and attempt_count = $3 and status = 'rendering' and lease_until > now() returning render_id", [job.render_id, workerId, job.attempt_count, leaseSeconds]);
+        if (!renewed.rowCount) throw new Error("Render lease lost");
+      } catch (error) {
+        leaseError = error;
+        child.kill('SIGKILL');
+      } finally { renewing = false; }
+    }, Math.max(100, Math.floor(leaseSeconds * 1000 / 3)));
+    child.once('error', error => { clearInterval(timer); reject(error); });
+    child.once('close', (code, signal) => {
+      clearInterval(timer);
+      if (leaseError) reject(leaseError);
+      else if (code !== 0) reject(new Error(`Render exited with code ${code}, signal ${signal}`));
+      else resolveRender();
+    });
+  });
+}
+
 async function processJob(job) {
   mkdirSync(outputRoot, { recursive: true });
-  const jobOutputRoot = resolve(outputRoot, job.render_id);
+  const jobOutputRoot = resolve(outputRoot, job.render_id, `attempt-${job.attempt_count}`);
   mkdirSync(jobOutputRoot, { recursive: true });
   const propsPath = resolve(jobOutputRoot, "props.json");
   writeFileSync(propsPath, JSON.stringify({ spotlight: job.content_snapshot }), "utf8");
   const outputs = [];
   try {
+    validateAssets(job.content_snapshot, process.env.ASSET_ALLOWED_ORIGINS || "");
+    if (job.rendering_engine !== "remotion") throw new Error("Unsupported rendering engine");
     for (const format of job.output_formats) {
       const composition = compositionFor[format];
       const outputPath = resolve(jobOutputRoot, `${format}.mp4`);
       const command = process.platform === "win32" ? "npx.cmd" : "npx";
-      const result = spawnSync(command, ["remotion", "render", "src/index.tsx", composition, outputPath, `--props=${propsPath}`], {
+      await renderWithLease(job, command, ["remotion", "render", "src/index.tsx", composition, outputPath, `--props=${propsPath}`], {
         stdio: "inherit",
         timeout: renderTimeoutMs,
         env: { ...process.env, USE_MOCK_AEM: "false", AEM_STRICT_MODE: "true" }
       });
-      if (result.error) throw new Error(`Remotion render failed for ${format}: ${result.error.message}`);
-      if (result.status !== 0) throw new Error(`Remotion render failed for ${format} with exit code ${result.status}`);
       const media = validateMediaFile(outputPath, format);
       const fileBytes = readFileSync(outputPath);
       outputs.push({
@@ -134,10 +180,10 @@ async function processJob(job) {
         checksum: createHash("sha256").update(fileBytes).digest("hex")
       });
     }
-    await markCompleted(job.render_id, outputs);
+    await markCompleted(job, outputs);
     console.log(`[Provenance worker] Completed ${job.render_id}`);
   } catch (error) {
-    await markFailed(job.render_id, error instanceof Error ? error.message : String(error));
+    await markFailed(job, error instanceof Error ? error.message : String(error));
     console.error(`[Provenance worker] Failed ${job.render_id}:`, error);
   } finally {
     try { unlinkSync(propsPath); } catch { /* keep render artifacts, remove only props */ }

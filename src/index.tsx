@@ -11,7 +11,6 @@ import newsMock from "./mock/examples/social_localized_news.json";
 import globalMock from "./mock/examples/global_campaign_multilang.json";
 import { AemSpotlight, fetchAemSpotlight } from "./aem/aemClient";
 import { parseAemSpotlight } from "./aem/schema";
-import { z } from "zod";
 
 const FPS = 30;
 
@@ -30,17 +29,7 @@ const getMockData = () => {
   }
 };
 
-const parseMockSpotlight = (): AemSpotlight => {
-  const mockData = getMockData();
-  try {
-    return parseAemSpotlight(mockData);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      console.error("[Remotion] Mock data validation failed:", error.format());
-    }
-    return mockData as unknown as AemSpotlight;
-  }
-};
+const parseMockSpotlight = (): AemSpotlight => parseAemSpotlight(getMockData());
 
 const totalDurationInFrames = (spotlight: AemSpotlight): number =>
   Math.ceil(spotlight.scenes.reduce((acc, scene) => acc + scene.durationSeconds, 0) * FPS);
@@ -51,7 +40,7 @@ export type RemotionProps = {
 
 const resolveSpotlight = async (props: RemotionProps): Promise<AemSpotlight> => {
   return (
-    props.spotlight ??
+    (props.spotlight ? parseAemSpotlight(props.spotlight) : undefined) ??
     (process.env.USE_MOCK_AEM === "true" || !process.env.AEM_BASE_URL
       ? parseMockSpotlight()
       : await fetchAemSpotlight({

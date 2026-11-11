@@ -40,6 +40,10 @@ const input: CreateRenderJobInput = {
 };
 
 describe("provenance contracts", () => {
+  it("rejects unsupported render engines and malformed colors", () => {
+    expect(() => CreateRenderJobInputSchema.parse({ ...input, renderingEngine: "videoflow" })).toThrow();
+    expect(() => CreateRenderJobInputSchema.parse({ ...input, content: { ...input.content, scenes: [{ ...input.content.scenes[0], brandColor: "!!!" }] } })).toThrow();
+  });
   it("rejects duplicate output formats and unknown fields", () => {
     expect(() =>
       CreateRenderJobInputSchema.parse({ ...input, outputFormats: ["16x9", "16x9"] })

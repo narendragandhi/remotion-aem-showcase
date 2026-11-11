@@ -56,7 +56,7 @@ export const CreateRenderJobInputSchema = z
     templateId: z.string().min(1).max(100),
     templateVersion: z.string().min(1).max(50),
     designSystemVersion: z.string().min(1).max(50),
-    renderingEngine: RenderingEngineSchema,
+    renderingEngine: z.literal("remotion"),
     outputFormats: z
       .array(ProvenanceFormatSchema)
       .min(1)

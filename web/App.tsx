@@ -1,3 +1,4 @@
+import { pilotFetch } from "./pilotApi";
 import { Player } from "@remotion/player";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -120,7 +121,7 @@ export default function App() {
   const [jobNotice, setJobNotice] = useState("");
 
   useEffect(() => {
-    void fetch("/api/provenance/")
+    void pilotFetch("/api/provenance/")
       .then((response) => response.json() as Promise<{ jobs?: RenderJob[] }>)
       .then((payload) => setRenderJobs(payload.jobs ?? []))
       .catch(() => setJobNotice("Provenance backend unavailable"));
@@ -133,7 +134,7 @@ export default function App() {
       setLiveLoading(true);
       setLiveError(null);
       try {
-        const response = await fetch("/api/aem/content/_cq_graphql/spotlight/endpoint.json", {
+        const response = await pilotFetch("/api/aem/content/_cq_graphql/spotlight/endpoint.json", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -277,7 +278,7 @@ export default function App() {
   const createRenderJob = async () => {
     setJobNotice("Recording render provenance…");
     try {
-      const response = await fetch("/api/provenance/jobs", {
+      const response = await pilotFetch("/api/provenance/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

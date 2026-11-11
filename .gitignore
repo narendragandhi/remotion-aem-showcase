@@ -36,3 +36,5 @@ coverage/
 .local/
 .playwright-cli/
 .env.postgres
+
+dist-server/

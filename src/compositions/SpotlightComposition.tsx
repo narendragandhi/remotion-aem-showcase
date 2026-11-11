@@ -475,7 +475,7 @@ const SpotlightSceneComponent: React.FC<{
               transform: `scale(${imageScale}) rotate(${imageRotate + glitch * 2}deg) translateX(${glitch * 5}px)`
             }}
           >
-            {imageError ? (
+            {imageError || !dynamicImageUrl ? (
               <AssetErrorPlaceholder assetType="image" />
             ) : (
               <Img

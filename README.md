@@ -33,6 +33,8 @@ Smoke-rendered stills from the latest build — all generated from a single AEM 
 
 ---
 
+See [the pilot runbook](docs/pilot-runbook.md) for the authenticated Node service and remaining acceptance gates. Static Vercel hosting alone does not provide the pilot APIs.
+
 ## Quick Start
 
 ```bash

@@ -12,6 +12,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --include=dev --omit=optional
 
+COPY public ./public
+COPY remotion.config.ts ./remotion.config.ts
 COPY src ./src
 COPY scripts ./scripts
 COPY aem-config ./aem-config

@@ -76,6 +76,10 @@ export class PostgresProvenanceStore implements ProvenanceStore {
     this.pool = new Pool({ connectionString, max: 10, idleTimeoutMillis: 30_000 });
   }
 
+  async health(): Promise<void> {
+    await this.pool.query("select 1");
+  }
+
   async list(): Promise<RenderJob[]> {
     const result = await this.pool.query<RenderJobRow>(
       `select ${selectColumns} group by r.render_id, c.id order by r.created_at desc`
@@ -89,6 +93,9 @@ export class PostgresProvenanceStore implements ProvenanceStore {
     const contentHash = hashContent(input.content);
     try {
       await client.query("begin");
+      await client.query("select pg_advisory_xact_lock(781246)");
+      const pending = await client.query("select count(*)::int as count from render_jobs where status in ('queued', 'rendering')");
+      if (pending.rows[0].count >= 20) throw new Error("Render queue capacity reached");
       const revision = await client.query<{ id: string }>(
         `insert into campaign_revisions (campaign_id, content_fragment_path, content_revision, content_hash, source, content_snapshot)
          values ($1, $2, $3, $4, $5, $6::jsonb)
